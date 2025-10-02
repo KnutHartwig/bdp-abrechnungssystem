@@ -1,0 +1,146 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Benutzer (Admins und Landeskasse)
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      UserRole @default(ADMIN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Beziehungen
+  aktionen  Aktion[]
+}
+
+enum UserRole {
+  ADMIN
+  LANDESKASSE
+}
+
+// Aktionen/Maßnahmen
+model Aktion {
+  id          String       @id @default(cuid())
+  titel       String
+  startdatum  DateTime
+  enddatum    DateTime
+  status      AktionStatus @default(AKTIV)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Beziehungen
+  abrechnungen Abrechnung[]
+  verantwortlicher User?   @relation(fields: [verantwortlicherId], references: [id])
+  verantwortlicherId String?
+
+  @@index([status])
+}
+
+enum AktionStatus {
+  AKTIV
+  INAKTIV
+  ABGESCHLOSSEN
+}
+
+// Kategorien für Abrechnungen
+model Kategorie {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  beschreibung String?
+  sortierung  Int      @default(0)
+  aktiv       Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  // Beziehungen
+  abrechnungen Abrechnung[]
+
+  @@index([aktiv])
+}
+
+// Haupttabelle: Abrechnungsposten
+model Abrechnung {
+  id                  String            @id @default(cuid())
+  
+  // Persönliche Daten
+  name                String
+  stamm               String
+  email               String
+  
+  // Abrechnungsdetails
+  aktion              Aktion            @relation(fields: [aktionId], references: [id])
+  aktionId            String
+  
+  kategorie           Kategorie         @relation(fields: [kategorieId], references: [id])
+  kategorieId         String
+  
+  belegbeschreibung   String?
+  belegdatum          DateTime
+  betrag              Decimal           @db.Decimal(10, 2)
+  
+  // Fahrtkosten-spezifisch (optional)
+  fahrzeugtyp         Fahrzeugtyp?
+  streckeKm           Decimal?          @db.Decimal(10, 2)
+  mitfahrer           Int?              @default(0)
+  istLagerleitung     Boolean           @default(false)
+  hatMaterial         Boolean           @default(false)
+  hatAnhaenger        Boolean           @default(false)
+  kmSatz              Decimal?          @db.Decimal(10, 2)
+  
+  // Beleg
+  belegUrl            String?
+  belegDateiname      String?
+  
+  // Status
+  status              AbrechnungStatus  @default(ENTWURF)
+  
+  // Timestamps
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  versendetAt         DateTime?
+
+  @@index([aktionId])
+  @@index([status])
+  @@index([email])
+}
+
+enum AbrechnungStatus {
+  ENTWURF
+  EINGEREICHT
+  VERSENDET
+}
+
+enum Fahrzeugtyp {
+  PKW_SOLO
+  PKW_MITFAHRER_1
+  PKW_MITFAHRER_2
+  PKW_MITFAHRER_3_PLUS
+  MOTORRAD
+}
+
+// Log-Tabelle für Flow-Ausführungen
+model FlowLog {
+  id              String   @id @default(cuid())
+  aktionId        String
+  aktionTitel     String
+  anzahlPosten    Int
+  gesamtbetrag    Decimal  @db.Decimal(10, 2)
+  status          String   // "SUCCESS" oder "ERROR"
+  fehler          String?  @db.Text
+  pdfUrl          String?
+  emailVersendet  Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  @@index([aktionId])
+  @@index([createdAt])
+}
