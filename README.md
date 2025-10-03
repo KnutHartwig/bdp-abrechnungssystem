@@ -1,242 +1,329 @@
 # BdP Abrechnungssystem
 
-Automatisiertes Abrechnungssystem für den BdP Landesverband Baden-Württemberg.
+Vollautomatisiertes Abrechnungssystem für den BdP Landesverband Baden-Württemberg e.V.
 
-## ✨ Features
+## 🎯 Features
 
-- ✅ Öffentliches Eingabeformular ohne Anmeldung
-- ✅ Automatische Fahrtkosten-Berechnung mit Zuschlägen
+- ✅ Öffentliches Eingabeformular (ohne Login)
+- ✅ 11 Abrechnungskategorien (inkl. Fahrtkosten mit automatischer Berechnung)
 - ✅ Datei-Upload für Belege (PDF, JPG, PNG)
-- ✅ Admin-Dashboard mit Übersicht und Statistiken
-- ✅ Automatische PDF-Generierung mit allen Belegen
+- ✅ Admin-Dashboard mit Übersicht
+- ✅ Freigabe-Workflow
+- ✅ Automatische PDF-Generierung
 - ✅ E-Mail-Versand an Landeskasse
-- ✅ 11 Abrechnungskategorien
 - ✅ Responsive Design (Mobile & Desktop)
 
-## 🚀 Schnellstart
+## 🛠️ Technologie-Stack
 
-### Voraussetzungen
+- **Frontend**: Next.js 14, React, TailwindCSS
+- **Backend**: Next.js API Routes, Prisma ORM
+- **Datenbank**: PostgreSQL
+- **Auth**: NextAuth.js
+- **PDF**: Puppeteer
+- **E-Mail**: Nodemailer
+
+## 📋 Voraussetzungen
 
 - Node.js >= 18.0.0
 - PostgreSQL >= 14.0
-- Git
+- SMTP-Server für E-Mail-Versand
 
-### Installation
+## 🚀 Installation
+
+### 1. Repository klonen
 
 ```bash
-# Repository klonen
-git clone <your-repo-url>
+git clone <repository-url>
 cd bdp-abrechnungssystem
+```
 
-# Dependencies installieren
+### 2. Dependencies installieren
+
+```bash
 npm install
+```
 
-# Umgebungsvariablen konfigurieren
-cp .env.local.template .env.local
-# Bearbeite .env.local mit deinen Werten
+### 3. Datenbank einrichten
 
-# Datenbank initialisieren
-npx prisma db push
+Erstellen Sie eine PostgreSQL-Datenbank:
+
+```bash
+createdb bdp_abrechnung
+```
+
+### 4. Environment Variables
+
+Kopieren Sie `.env.example` zu `.env` und füllen Sie die Werte aus:
+
+```bash
+cp .env.example .env
+```
+
+Editieren Sie `.env`:
+
+```env
+# Datenbank
+DATABASE_URL="postgresql://user:password@localhost:5432/bdp_abrechnung"
+
+# NextAuth
+NEXTAUTH_SECRET="generieren-sie-einen-langen-zufaelligen-string"
+NEXTAUTH_URL="http://localhost:3000"
+
+# E-Mail (SMTP)
+EMAIL_SERVER="smtp.gmail.com"
+EMAIL_PORT="587"
+EMAIL_USER="ihre-email@domain.de"
+EMAIL_PASSWORD="ihr-app-passwort"
+EMAIL_FROM="BdP Abrechnungssystem <noreply@bdp-bawue.de>"
+EMAIL_TO="kasse@bdp-bawue.de"
+```
+
+**Wichtig**: Für Gmail müssen Sie ein App-Passwort erstellen (nicht Ihr normales Passwort):
+https://support.google.com/accounts/answer/185833
+
+### 5. Datenbank migrieren und seeden
+
+```bash
+npx prisma migrate dev
 npx prisma db seed
+```
 
-# Development Server starten
+Dies erstellt:
+- Admin-User: `admin@bdp-bawue.de` / `admin123`
+- Landeskasse-User: `kasse@bdp-bawue.de` / `admin123`
+- 11 Kategorien
+- Test-Aktion "Sommerlager 2025"
+
+### 6. Entwicklungsserver starten
+
+```bash
 npm run dev
 ```
 
-Die App läuft dann auf [http://localhost:3000](http://localhost:3000)
+Die Anwendung ist nun verfügbar unter: http://localhost:3000
 
-## 📝 Umgebungsvariablen
+## 🌐 Deployment auf Vercel
 
-Kopiere `.env.local.template` zu `.env.local` und fülle folgende Werte:
+### Automatisches Deployment via GitHub
 
-```env
-# Database
-DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
+1. **Repository auf GitHub pushen**:
+   ```bash
+   git init
+   git add .
+   git commit -m "Initial commit"
+   git remote add origin <ihr-github-repo-url>
+   git push -u origin main
+   ```
 
-# NextAuth
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="<generiere-mit-openssl-rand-base64-32>"
+2. **Vercel Account erstellen**: https://vercel.com/signup
 
-# Email (SMTP)
-SMTP_HOST="smtp.example.com"
-SMTP_PORT="587"
-SMTP_USER="noreply@bdp-bawue.de"
-SMTP_PASSWORD="YOUR_PASSWORD"
-SMTP_FROM="BdP Abrechnungen <noreply@bdp-bawue.de>"
-LANDESKASSE_EMAIL="kasse@bdp-bawue.de"
+3. **Neues Projekt in Vercel**:
+   - "Import Git Repository" wählen
+   - Ihr GitHub-Repository auswählen
+   - Framework Preset: **Next.js** (wird automatisch erkannt)
 
-# Admin Account (wird beim Seed erstellt)
-ADMIN_EMAIL="admin@bdp-bawue.de"
-ADMIN_PASSWORD="change-me-on-first-login"
+4. **PostgreSQL Datenbank in Vercel**:
+   - Im Vercel-Dashboard: Storage → Create Database
+   - Typ: **Postgres**
+   - Region wählen (am besten EU für DSGVO)
+   - Datenbank wird automatisch erstellt
+   - `DATABASE_URL` wird automatisch als Environment Variable gesetzt
+
+5. **Environment Variables in Vercel setzen**:
+   
+   Im Vercel-Dashboard unter Settings → Environment Variables:
+   
+   ```
+   NEXTAUTH_SECRET=<langer-zufälliger-string>
+   NEXTAUTH_URL=https://ihr-projekt.vercel.app
+   
+   EMAIL_SERVER=smtp.gmail.com
+   EMAIL_PORT=587
+   EMAIL_USER=ihre-email@domain.de
+   EMAIL_PASSWORD=ihr-app-passwort
+   EMAIL_FROM=BdP Abrechnungssystem <noreply@bdp-bawue.de>
+   EMAIL_TO=kasse@bdp-bawue.de
+   ```
+
+6. **Build & Deploy**:
+   - Vercel baut und deployed automatisch
+   - Bei jedem Git-Push erfolgt ein neues Deployment
+
+7. **Datenbank initialisieren** (einmalig):
+   
+   Nach dem ersten Deployment im Vercel-Dashboard Terminal öffnen:
+   ```bash
+   npx prisma migrate deploy
+   npx prisma db seed
+   ```
+
+## 📱 Verwendung
+
+### Für Teilnehmende
+
+1. Startseite öffnen
+2. "Abrechnung einreichen" klicken
+3. Formular ausfüllen:
+   - Persönliche Daten
+   - Maßnahme und Kategorie wählen
+   - Bei Fahrtkosten: Automatische Berechnung
+   - Beleg hochladen (optional)
+4. Absenden
+
+### Für Admins
+
+1. `/admin/login` aufrufen
+2. Mit Admin-Credentials einloggen
+3. **Dashboard**: Übersicht aller Abrechnungen
+4. **Freigabe**:
+   - Maßnahme wählen
+   - Abrechnungen auswählen
+   - "Freigeben und versenden" klicken
+   - → PDF wird erstellt und per E-Mail versendet
+
+## 🔐 Standard-Login (Entwicklung)
+
+```
+E-Mail: admin@bdp-bawue.de
+Passwort: admin123
 ```
 
-## 🏗️ Projekt-Struktur
+**⚠️ WICHTIG**: Ändern Sie dieses Passwort in der Produktion!
+
+```bash
+# Neues Passwort hashen
+node -e "const bcrypt = require('bcryptjs'); console.log(bcrypt.hashSync('neues-passwort', 10));"
+
+# In Prisma Studio oder direkt in DB aktualisieren
+npx prisma studio
+```
+
+## 🗂️ Projektstruktur
 
 ```
 bdp-abrechnungssystem/
 ├── prisma/
-│   ├── schema.prisma       # Datenbankschema
-│   └── seed.ts             # Seed-Daten
+│   ├── schema.prisma          # Datenbankschema
+│   └── seed.ts                # Seed-Daten
 ├── public/
-│   ├── uploads/            # Hochgeladene Belege
-│   └── pdfs/               # Generierte PDFs
+│   ├── uploads/               # Hochgeladene Belege
+│   └── pdfs/                  # Generierte PDFs
 ├── src/
 │   ├── app/
-│   │   ├── api/            # API Routes
-│   │   ├── abrechnung/     # Öffentliche Eingabe
-│   │   └── admin/          # Admin-Bereich
+│   │   ├── abrechnung/        # Öffentliches Formular
+│   │   ├── admin/             # Admin-Bereich
+│   │   ├── api/               # API Routes
+│   │   │   ├── abrechnung/
+│   │   │   ├── aktionen/
+│   │   │   ├── auth/
+│   │   │   ├── email/
+│   │   │   ├── kategorien/
+│   │   │   ├── pdf/
+│   │   │   └── upload/
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   └── page.tsx           # Startseite
 │   ├── components/
-│   │   ├── ui/             # Basis-UI-Komponenten
-│   │   ├── forms/          # Formulare
-│   │   └── admin/          # Admin-Komponenten
+│   │   ├── forms/
+│   │   ├── admin/
+│   │   └── ui/                # UI-Komponenten
 │   ├── lib/
-│   │   ├── prisma.ts       # DB-Client
-│   │   ├── auth.ts         # Authentication
-│   │   ├── pdf-generator.ts # PDF-Erstellung
-│   │   ├── email.ts        # E-Mail-Versand
-│   │   └── utils.ts        # Hilfsfunktionen
+│   │   ├── auth.ts            # NextAuth Config
+│   │   ├── email.ts           # E-Mail Service
+│   │   ├── pdf-generator.ts   # PDF-Generierung
+│   │   ├── prisma.ts          # Prisma Client
+│   │   └── utils.ts           # Hilfsfunktionen
 │   └── types/
-│       └── index.ts        # TypeScript-Typen
-├── .env.local              # Umgebungsvariablen (nicht in Git!)
+│       └── index.ts           # TypeScript Types
+├── .env                       # Environment Variables
+├── .gitignore
+├── next.config.js
 ├── package.json
-└── README.md
+├── tailwind.config.js
+└── tsconfig.json
 ```
 
-## 🎯 Verwendung
+## 🐛 Troubleshooting
 
-### Für Teilnehmende
-
-1. Öffne [/abrechnung](/abrechnung)
-2. Fülle das Formular aus
-3. Lade optional einen Beleg hoch
-4. Reiche die Abrechnung ein
-
-### Für Admins
-
-1. Login unter [/admin/login](/admin/login)
-2. Standardzugangsdaten nach Seed:
-   - Email: `admin@bdp-bawue.de`
-   - Passwort: `Admin2025!` (sofort ändern!)
-3. Dashboard zeigt alle Abrechnungen
-4. Wähle eine Aktion
-5. Klicke "PDF erstellen & versenden"
-
-## 🔧 Deployment
-
-### Option 1: Vercel (Empfohlen)
-
-Siehe detaillierte Anleitung in `deployment-guide-vercel.md`
-
-Kurzversion:
-```bash
-# Vercel CLI installieren
-npm i -g vercel
-
-# Deployment
-vercel
-
-# Production Deployment
-vercel --prod
-```
-
-### Option 2: Docker
+### Puppeteer installiert sich nicht
 
 ```bash
-# Docker Image bauen
-docker build -t bdp-abrechnungssystem .
+# Auf Linux/Debian-basierten Systemen
+sudo apt-get install -y libgbm-dev
 
-# Container starten
-docker run -p 3000:3000 \
-  -e DATABASE_URL="..." \
-  -e NEXTAUTH_SECRET="..." \
-  bdp-abrechnungssystem
+# Puppeteer neu installieren
+npm install puppeteer --force
 ```
 
-## 🧪 Testing
+### E-Mail-Versand funktioniert nicht
+
+1. Prüfen Sie SMTP-Credentials in `.env`
+2. Für Gmail: App-Passwort verwenden (nicht normales Passwort)
+3. Testen Sie mit:
+   ```bash
+   curl http://localhost:3000/api/email -X POST -H "Content-Type: application/json" -d '{"test": true}'
+   ```
+
+### Prisma Migrations schlagen fehl
 
 ```bash
-# Development Server
-npm run dev
+# Reset der Datenbank (⚠️ Alle Daten gehen verloren!)
+npx prisma migrate reset
 
-# Production Build testen
-npm run build
-npm start
-
-# Prisma Studio (DB-GUI)
-npm run db:studio
+# Oder nur neue Migration
+npx prisma migrate dev --name init
 ```
 
-## 📚 Technologien
+### Vercel Build schlägt fehl
 
-- **Frontend:** Next.js 14, React 18, Tailwind CSS
-- **Backend:** Next.js API Routes
-- **Database:** PostgreSQL mit Prisma ORM
-- **Auth:** NextAuth.js
-- **PDF:** pdf-lib
-- **Email:** Nodemailer
+- Prüfen Sie, ob alle Environment Variables gesetzt sind
+- Stellen Sie sicher, dass `DATABASE_URL` korrekt ist
+- Logs in Vercel Dashboard prüfen
 
-## 🔐 Sicherheit
+## 📝 Kategorien
+
+Das System unterstützt 11 Abrechnungskategorien:
+
+1. Teilnahmebeiträge
+2. **Fahrtkosten** (mit automatischer Berechnung)
+3. Unterkunft
+4. Verpflegung
+5. Material
+6. Porto
+7. Telekommunikation
+8. Versicherung
+9. Honorare
+10. Raummiete
+11. Sonstige Ausgaben
+
+## 💡 Fahrtkosten-Berechnung
+
+Automatische Berechnung basierend auf:
+- **Fahrzeugtyp**: PKW (0,30€), Motorrad (0,20€), Kleinbus (0,35€), Bus (0,50€)
+- **Zuschläge**: 
+  - Lagerleitung: +0,05€/km
+  - Materialtransport: +0,05€/km
+  - Anhänger: +0,05€/km
+
+## 🔒 Sicherheit
 
 - Passwörter werden mit bcrypt gehasht
-- NextAuth Session-basierte Authentifizierung
-- CSRF-Schutz durch Next.js
-- Input-Validierung auf Client & Server
-- SQL-Injection-Schutz durch Prisma
+- NextAuth.js für sichere Authentifizierung
+- CSRF-Schutz über Next.js
+- File-Upload-Validierung (Typ & Größe)
+- SQL-Injection-Schutz durch Prisma ORM
 
-## 📖 API-Dokumentation
-
-### Public Endpoints
-
-- `POST /api/abrechnung` - Abrechnung einreichen
-- `POST /api/upload` - Beleg hochladen
-
-### Protected Endpoints (Admin only)
-
-- `GET /api/abrechnung` - Alle Abrechnungen abrufen
-- `PATCH /api/abrechnung` - Abrechnung aktualisieren
-- `DELETE /api/abrechnung` - Abrechnung löschen
-- `POST /api/pdf` - PDF generieren
-- `GET /api/pdf?aktionId=...` - PDF herunterladen
-- `POST /api/email` - Email versenden
-
-## 🐛 Bekannte Probleme & Lösungen
-
-### Prisma-Fehler beim ersten Start
-
-```bash
-npx prisma generate
-npx prisma db push
-```
-
-### PDF-Generierung schlägt fehl
-
-Stelle sicher, dass `/public/uploads` und `/public/pdfs` existieren:
-```bash
-mkdir -p public/uploads public/pdfs
-```
-
-### Email-Versand funktioniert nicht
-
-Prüfe SMTP-Einstellungen in `.env.local` und teste mit:
-```bash
-node -e "require('./src/lib/email').testEmailConnection()"
-```
-
-## 📞 Support
+## 📧 Support
 
 Bei Fragen oder Problemen:
-- **Email:** kasse@bdp-bawue.de
-- **Dokumentation:** Siehe `SETUP.md` für Details
+- E-Mail: kasse@bdp-bawue.de
+- Projekt-Repository: Issues öffnen
 
 ## 📄 Lizenz
 
-Internes Projekt des BdP Landesverband Baden-Württemberg e.V.
-
-## 🙏 Credits
-
-Entwickelt für den BdP Landesverband Baden-Württemberg e.V.
+© 2025 BdP Landesverband Baden-Württemberg e.V.
 
 ---
 
-**Version:** 1.0.0  
-**Stand:** Oktober 2025
+**Version**: 1.0  
+**Stand**: Oktober 2025

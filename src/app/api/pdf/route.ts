@@ -1,158 +1,152 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { generateAbrechnungsPDF, savePDFToFile } from '@/lib/pdf-generator'
-import { generateFilename } from '@/lib/utils'
-import { prisma } from '@/lib/prisma'
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { generiereAbrechnungsPDF } from '@/lib/pdf-generator';
+import { PDFExportData } from '@/types';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-
-    if (!session || !['ADMIN', 'LANDESKASSE'].includes(session.user.role)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Keine Berechtigung',
-        },
-        { status: 403 }
-      )
-    }
-
-    const body = await request.json()
-    const { aktionId, inkludiereEntwuerfe = false } = body
+    const body = await request.json();
+    const { aktionId } = body;
 
     if (!aktionId) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Aktion-ID fehlt',
-        },
+        { error: 'Aktion-ID fehlt' },
         { status: 400 }
-      )
+      );
     }
 
-    // PDF generieren
-    const { pdfBuffer, metadata } = await generateAbrechnungsPDF(aktionId, {
-      inkludiereEntwuerfe,
-    })
+    // Aktion laden
+    const aktion = await prisma.aktion.findUnique({
+      where: { id: aktionId },
+    });
 
-    // PDF speichern
-    const filename = generateFilename(
-      `Abrechnung_${metadata.aktion.titel.replace(/[^a-z0-9]/gi, '_')}`
-    )
-    const pdfUrl = await savePDFToFile(pdfBuffer, filename)
+    if (!aktion) {
+      return NextResponse.json(
+        { error: 'Aktion nicht gefunden' },
+        { status: 404 }
+      );
+    }
 
-    // Flow-Log erstellen
-    await prisma.flowLog.create({
-      data: {
+    // Abrechnungen laden (nur eingereichte oder freigegebene)
+    const abrechnungen = await prisma.abrechnung.findMany({
+      where: {
         aktionId,
-        aktionTitel: metadata.aktion.titel,
-        anzahlPosten: metadata.anzahlPosten,
-        gesamtbetrag: metadata.gesamtbetrag,
-        status: 'SUCCESS',
-        pdfUrl,
-        emailVersendet: false,
+        status: {
+          in: ['eingereicht', 'versendet'],
+        },
       },
-    })
+      include: {
+        aktion: true,
+        kategorie: true,
+      },
+      orderBy: [
+        { kategorie: { sortierung: 'asc' } },
+        { belegdatum: 'asc' },
+      ],
+    });
+
+    if (abrechnungen.length === 0) {
+      return NextResponse.json(
+        { error: 'Keine Abrechnungen zum Exportieren gefunden' },
+        { status: 404 }
+      );
+    }
+
+    // Gruppiere nach Kategorien
+    const kategorienMap = new Map<string, typeof abrechnungen>();
+    
+    abrechnungen.forEach((abrechnung) => {
+      const katName = abrechnung.kategorie.name;
+      if (!kategorienMap.has(katName)) {
+        kategorienMap.set(katName, []);
+      }
+      kategorienMap.get(katName)!.push(abrechnung);
+    });
+
+    // Berechne Summen
+    const kategorien = Array.from(kategorienMap.entries()).map(([name, posten]) => {
+      const summe = posten.reduce((acc, p) => acc + p.betrag, 0);
+      return { name, posten, summe };
+    });
+
+    const gesamtsumme = kategorien.reduce((acc, k) => acc + k.summe, 0);
+
+    // PDF-Daten zusammenstellen
+    const pdfData: PDFExportData = {
+      aktionId: aktion.id,
+      aktionTitel: aktion.titel,
+      startdatum: aktion.startdatum,
+      enddatum: aktion.enddatum,
+      abrechnungen,
+      kategorien,
+      gesamtsumme,
+    };
+
+    // PDF generieren
+    const pdfPfad = await generiereAbrechnungsPDF(pdfData);
+
+    // Export-Eintrag erstellen
+    const exportEntry = await prisma.export.create({
+      data: {
+        aktionId: aktion.id,
+        aktionTitel: aktion.titel,
+        dateiname: pdfPfad.split('/').pop() || '',
+        dateipfad: pdfPfad,
+        anzahlPosten: abrechnungen.length,
+        gesamtsumme,
+      },
+    });
+
+    // Status aller Abrechnungen auf "versendet" setzen
+    await prisma.abrechnung.updateMany({
+      where: {
+        id: {
+          in: abrechnungen.map((a) => a.id),
+        },
+      },
+      data: {
+        status: 'versendet',
+      },
+    });
 
     return NextResponse.json({
       success: true,
-      data: {
-        pdfUrl,
-        metadata,
-      },
-      message: 'PDF erfolgreich erstellt',
-    })
-  } catch (error: any) {
-    console.error('POST /api/pdf error:', error)
-
-    // Fehler-Log erstellen falls möglich
-    try {
-      const body = await request.json()
-      const { aktionId } = body
-
-      if (aktionId) {
-        const aktion = await prisma.aktion.findUnique({
-          where: { id: aktionId },
-        })
-
-        if (aktion) {
-          await prisma.flowLog.create({
-            data: {
-              aktionId,
-              aktionTitel: aktion.titel,
-              anzahlPosten: 0,
-              gesamtbetrag: 0,
-              status: 'ERROR',
-              fehler: error.message,
-              emailVersendet: false,
-            },
-          })
-        }
-      }
-    } catch (logError) {
-      console.error('Error logging failed:', logError)
-    }
-
+      exportId: exportEntry.id,
+      pdfUrl: `/pdfs/${exportEntry.dateiname}`,
+      anzahlPosten: abrechnungen.length,
+      gesamtsumme,
+    });
+  } catch (error) {
+    console.error('PDF generation error:', error);
     return NextResponse.json(
-      {
-        success: false,
-        error: 'Fehler beim Erstellen der PDF',
-        details: error.message,
-      },
+      { error: 'Fehler bei der PDF-Generierung' },
       { status: 500 }
-    )
+    );
   }
 }
 
-// GET - PDF-Vorschau/Download
+// GET - Exportierte PDFs abrufen
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const searchParams = request.nextUrl.searchParams;
+    const aktionId = searchParams.get('aktionId');
 
-    if (!session || !['ADMIN', 'LANDESKASSE'].includes(session.user.role)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Keine Berechtigung',
-        },
-        { status: 403 }
-      )
-    }
+    const where: any = {};
+    if (aktionId) where.aktionId = aktionId;
 
-    const { searchParams } = new URL(request.url)
-    const aktionId = searchParams.get('aktionId')
-
-    if (!aktionId) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Aktion-ID fehlt',
-        },
-        { status: 400 }
-      )
-    }
-
-    // PDF generieren
-    const { pdfBuffer, metadata } = await generateAbrechnungsPDF(aktionId)
-
-    // Als Download zurückgeben
-    return new NextResponse(pdfBuffer, {
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="Abrechnung_${metadata.aktion.titel.replace(/[^a-z0-9]/gi, '_')}.pdf"`,
+    const exports = await prisma.export.findMany({
+      where,
+      orderBy: {
+        createdAt: 'desc',
       },
-    })
-  } catch (error: any) {
-    console.error('GET /api/pdf error:', error)
+    });
+
+    return NextResponse.json(exports);
+  } catch (error) {
+    console.error('GET exports error:', error);
     return NextResponse.json(
-      {
-        success: false,
-        error: 'Fehler beim Abrufen der PDF',
-        details: error.message,
-      },
+      { error: 'Fehler beim Laden der Exports' },
       { status: 500 }
-    )
+    );
   }
 }

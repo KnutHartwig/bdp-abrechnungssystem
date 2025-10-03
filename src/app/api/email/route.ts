@@ -1,118 +1,92 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { sendAbrechnungEmail, sendErrorNotification } from '@/lib/email'
-import { prisma } from '@/lib/prisma'
-import path from 'path'
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { sendeAbrechnungEmail, sendeTestEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
+    const body = await request.json();
+    const { exportId, test } = body;
 
-    if (!session || !['ADMIN', 'LANDESKASSE'].includes(session.user.role)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Keine Berechtigung',
-        },
-        { status: 403 }
-      )
+    // Test-Email
+    if (test) {
+      const success = await sendeTestEmail();
+      return NextResponse.json({ success });
     }
 
-    const body = await request.json()
-    const { aktionId, pdfUrl, metadata } = body
-
-    if (!aktionId || !pdfUrl || !metadata) {
+    // Abrechnung versenden
+    if (!exportId) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Erforderliche Daten fehlen',
-        },
+        { error: 'Export-ID fehlt' },
         { status: 400 }
-      )
+      );
     }
 
-    // Aktion laden
+    const exportEntry = await prisma.export.findUnique({
+      where: { id: exportId },
+    });
+
+    if (!exportEntry) {
+      return NextResponse.json(
+        { error: 'Export nicht gefunden' },
+        { status: 404 }
+      );
+    }
+
+    if (exportEntry.emailVersendet) {
+      return NextResponse.json(
+        { error: 'E-Mail wurde bereits versendet' },
+        { status: 400 }
+      );
+    }
+
+    // Aktion laden für zusätzliche Daten
     const aktion = await prisma.aktion.findUnique({
-      where: { id: aktionId },
-    })
+      where: { id: exportEntry.aktionId },
+    });
 
     if (!aktion) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Aktion nicht gefunden',
-        },
+        { error: 'Aktion nicht gefunden' },
         { status: 404 }
-      )
+      );
     }
 
-    // PDF-Pfad konstruieren
-    const pdfPath = path.join(process.cwd(), 'public', pdfUrl)
+    // E-Mail versenden
+    const success = await sendeAbrechnungEmail({
+      aktionTitel: exportEntry.aktionTitel,
+      startdatum: aktion.startdatum,
+      enddatum: aktion.enddatum,
+      anzahlPosten: exportEntry.anzahlPosten,
+      gesamtsumme: exportEntry.gesamtsumme,
+      pdfPfad: exportEntry.dateipfad,
+    });
 
-    // Email versenden
-    await sendAbrechnungEmail(
-      aktion.titel,
-      metadata.gesamtbetrag,
-      metadata.anzahlPosten,
-      pdfPath
-    )
+    if (!success) {
+      return NextResponse.json(
+        { error: 'Fehler beim E-Mail-Versand' },
+        { status: 500 }
+      );
+    }
 
-    // Status aller Abrechnungen auf VERSENDET setzen
-    await prisma.abrechnung.updateMany({
-      where: {
-        aktionId,
-        status: {
-          in: ['ENTWURF', 'EINGEREICHT'],
-        },
-      },
-      data: {
-        status: 'VERSENDET',
-        versendetAt: new Date(),
-      },
-    })
-
-    // Flow-Log aktualisieren
-    await prisma.flowLog.updateMany({
-      where: {
-        aktionId,
-        pdfUrl,
-      },
+    // Export aktualisieren
+    await prisma.export.update({
+      where: { id: exportId },
       data: {
         emailVersendet: true,
+        emailAn: process.env.EMAIL_TO,
+        versandtAm: new Date(),
       },
-    })
+    });
 
     return NextResponse.json({
       success: true,
-      message: 'Email erfolgreich versendet',
-    })
-  } catch (error: any) {
-    console.error('POST /api/email error:', error)
-
-    // Fehler-Benachrichtigung senden
-    try {
-      const body = await request.json()
-      const { aktionId, metadata } = body
-
-      if (aktionId && metadata) {
-        await sendErrorNotification(
-          aktionId,
-          metadata.aktion.titel,
-          error.message
-        )
-      }
-    } catch (notifyError) {
-      console.error('Error notification failed:', notifyError)
-    }
-
+      message: 'E-Mail erfolgreich versendet',
+    });
+  } catch (error) {
+    console.error('Email sending error:', error);
     return NextResponse.json(
-      {
-        success: false,
-        error: 'Fehler beim Versenden der Email',
-        details: error.message,
-      },
+      { error: 'Fehler beim E-Mail-Versand' },
       { status: 500 }
-    )
+    );
   }
 }

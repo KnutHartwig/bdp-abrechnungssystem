@@ -1,6 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
+// Prisma Schema für BdP Abrechnungssystem
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,137 +8,98 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Benutzer (Admins und Landeskasse)
+// Benutzer für Admin-Zugriff
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
   name      String
-  password  String
-  role      UserRole @default(ADMIN)
+  password  String   // bcrypt hash
+  role      String   @default("admin") // admin, landeskasse
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  // Beziehungen
-  aktionen  Aktion[]
 }
 
-enum UserRole {
-  ADMIN
-  LANDESKASSE
-}
-
-// Aktionen/Maßnahmen
+// Aktionen (Maßnahmen/Events)
 model Aktion {
-  id          String       @id @default(cuid())
-  titel       String
-  startdatum  DateTime
-  enddatum    DateTime
-  status      AktionStatus @default(AKTIV)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-
-  // Beziehungen
+  id           String        @id @default(cuid())
+  titel        String
+  startdatum   DateTime
+  enddatum     DateTime
+  status       String        @default("aktiv") // aktiv, inaktiv, abgeschlossen
+  beschreibung String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
   abrechnungen Abrechnung[]
-  verantwortlicher User?   @relation(fields: [verantwortlicherId], references: [id])
-  verantwortlicherId String?
-
-  @@index([status])
-}
-
-enum AktionStatus {
-  AKTIV
-  INAKTIV
-  ABGESCHLOSSEN
 }
 
 // Kategorien für Abrechnungen
 model Kategorie {
-  id          String   @id @default(cuid())
-  name        String   @unique
+  id           String       @id @default(cuid())
+  name         String       @unique
   beschreibung String?
-  sortierung  Int      @default(0)
-  aktiv       Boolean  @default(true)
-  createdAt   DateTime @default(now())
-
-  // Beziehungen
+  sortierung   Int          @default(0)
+  aktiv        Boolean      @default(true)
   abrechnungen Abrechnung[]
-
-  @@index([aktiv])
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 }
 
 // Haupttabelle: Abrechnungsposten
 model Abrechnung {
-  id                  String            @id @default(cuid())
+  id                String    @id @default(cuid())
   
   // Persönliche Daten
-  name                String
-  stamm               String
-  email               String
+  name              String
+  stamm             String
+  email             String
   
-  // Abrechnungsdetails
-  aktion              Aktion            @relation(fields: [aktionId], references: [id])
-  aktionId            String
+  // Referenzen
+  aktionId          String
+  aktion            Aktion    @relation(fields: [aktionId], references: [id], onDelete: Cascade)
+  kategorieId       String
+  kategorie         Kategorie @relation(fields: [kategorieId], references: [id])
   
-  kategorie           Kategorie         @relation(fields: [kategorieId], references: [id])
-  kategorieId         String
-  
-  belegbeschreibung   String?
-  belegdatum          DateTime
-  betrag              Decimal           @db.Decimal(10, 2)
+  // Belegdaten
+  belegbeschreibung String?
+  belegdatum        DateTime
+  betrag            Float
+  belegUrl          String?   // URL zum hochgeladenen Beleg
+  belegDateiname    String?
   
   // Fahrtkosten-spezifisch (optional)
-  fahrzeugtyp         Fahrzeugtyp?
-  streckeKm           Decimal?          @db.Decimal(10, 2)
-  mitfahrer           Int?              @default(0)
-  istLagerleitung     Boolean           @default(false)
-  hatMaterial         Boolean           @default(false)
-  hatAnhaenger        Boolean           @default(false)
-  kmSatz              Decimal?          @db.Decimal(10, 2)
+  fahrzeugtyp       String?   // PKW, Motorrad, etc.
+  kilometer         Float?
+  kmSatz            Float?    // 0.10 - 0.50 EUR
+  mitfahrer         Int?
+  lagerleitung      Boolean   @default(false) // +0.05 EUR
+  material          Boolean   @default(false) // +0.05 EUR
+  anhaenger         Boolean   @default(false) // +0.05 EUR
   
-  // Beleg
-  belegUrl            String?
-  belegDateiname      String?
+  // Status und Metadaten
+  status            String    @default("entwurf") // entwurf, eingereicht, versendet
+  notizen           String?
   
-  // Status
-  status              AbrechnungStatus  @default(ENTWURF)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
   
-  // Timestamps
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
-  versendetAt         DateTime?
-
   @@index([aktionId])
+  @@index([kategorieId])
   @@index([status])
-  @@index([email])
 }
 
-enum AbrechnungStatus {
-  ENTWURF
-  EINGEREICHT
-  VERSENDET
-}
-
-enum Fahrzeugtyp {
-  PKW_SOLO
-  PKW_MITFAHRER_1
-  PKW_MITFAHRER_2
-  PKW_MITFAHRER_3_PLUS
-  MOTORRAD
-}
-
-// Log-Tabelle für Flow-Ausführungen
-model FlowLog {
-  id              String   @id @default(cuid())
-  aktionId        String
-  aktionTitel     String
-  anzahlPosten    Int
-  gesamtbetrag    Decimal  @db.Decimal(10, 2)
-  status          String   // "SUCCESS" oder "ERROR"
-  fehler          String?  @db.Text
-  pdfUrl          String?
-  emailVersendet  Boolean  @default(false)
-  createdAt       DateTime @default(now())
-
+// Protokollierung von PDF-Exporten und E-Mail-Versand
+model Export {
+  id            String   @id @default(cuid())
+  aktionId      String
+  aktionTitel   String
+  dateiname     String
+  dateipfad     String
+  anzahlPosten  Int
+  gesamtsumme   Float
+  emailVersendet Boolean @default(false)
+  emailAn       String?
+  versandtAm    DateTime?
+  createdAt     DateTime @default(now())
+  
   @@index([aktionId])
-  @@index([createdAt])
 }
