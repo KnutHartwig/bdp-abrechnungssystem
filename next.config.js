@@ -1,9 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // React 19 Compiler aktivieren
-  experimental: {
-    reactCompiler: true,
-  },
+  // React Compiler deaktiviert (benötigt babel-plugin-react-compiler)
+  // experimental: {
+  //   reactCompiler: true,
+  // },
   
   // Turbopack für schnelleres Dev
   // (wird automatisch mit --turbopack flag verwendet)
