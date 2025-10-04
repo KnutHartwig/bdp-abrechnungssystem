@@ -2,6 +2,84 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [1.1.3] - 2025-10-04
+
+### 🔴 KRITISCHE FIXES - Build-Fehler vollständig behoben
+
+#### CSS Build-Fehler
+- ✅ **`bg-background` und `text-foreground` entfernt**
+  - Problem: Klassen existierten nicht in Tailwind ohne shadcn/ui Plugin
+  - Lösung: Ersetzt durch `bg-white` und `text-gray-900`
+  - **Build kompiliert jetzt erfolgreich!**
+
+### 🔧 Dependency-Updates - Sicherheit & Wartbarkeit
+
+#### Puppeteer (KRITISCH)
+- ✅ **23.11.1 → 24.23.0** (neueste stabile Version)
+  - Behebt: `npm warn deprecated puppeteer@23.11.1: < 24.15.0 is no longer supported`
+  - Sicherheitsupdates und neue Features
+  - **Keine Breaking Changes in unserer Nutzung**
+
+#### Node.js Engine
+- ✅ **`>=18.0.0` → `18.x`** (fixierte Major-Version)
+  - Verhindert automatische Upgrades bei neuen Major-Versionen
+  - Behebt: Vercel Warning über Auto-Upgrade
+  - Stabiler für Production-Deployments
+
+#### UI Libraries
+- ✅ **lucide-react**: 0.427.0 → 0.544.0
+- ✅ **@radix-ui/react-dialog**: 1.1.1 → 1.1.15
+- ✅ **@radix-ui/react-dropdown-menu**: 2.1.1 → 2.1.16
+- ✅ **@radix-ui/react-label**: 2.1.0 → 2.1.7
+- ✅ **@radix-ui/react-select**: 2.1.1 → 2.2.6
+- ✅ **@radix-ui/react-slot**: 1.1.0 → 1.2.3
+- ✅ **@radix-ui/react-toast**: 1.2.1 → 1.2.15
+
+### 📝 Dokumentation
+
+#### Neue Dateien
+- ✅ **DEPRECATED-WARNINGS.md** erstellt
+  - Erklärt verbleibende npm Warnings
+  - Begründet, warum ESLint 8 beibehalten wird
+  - Dokumentiert transitive Dependencies
+  - Upgrade-Pfad für v2.0.0
+
+### ⚠️ Akzeptierte Warnings (NICHT behebbar)
+
+**ESLint 8.57.1 deprecated:**
+- ✅ ABSICHTLICH auf Version 8 belassen
+- Next.js 14.2.5 benötigt ESLint 8 (nicht kompatibel mit ESLint 9)
+- ESLint 9 erfordert Flat Config (Breaking Changes)
+- Wird mit Next.js 15 Upgrade behoben
+
+**Transitive Dependencies:**
+- `inflight@1.0.6` - von Build-Tools verwendet
+- `rimraf@3.0.2` - von Build-Tools verwendet  
+- `@humanwhocodes/*` - von ESLint 8 verwendet
+- `glob@7.2.3` - von Build-Tools verwendet
+- **Keine direkten Security-Risiken**
+- **Nur Build-Zeit Warnings, nicht in Production**
+
+### 🎯 Build-Status
+
+- ✅ **TypeScript kompiliert ohne Fehler**
+- ✅ **CSS Build erfolgreich**
+- ✅ **Webpack Build erfolgreich**
+- ✅ **Keine kritischen Errors**
+- ✅ **Vercel-Deployment bereit**
+- ✅ **Produktionsbereit!**
+
+### 📊 Zusammenfassung
+
+| Kategorie | Anzahl behoben | Status |
+|-----------|---------------|--------|
+| **Kritische Build-Fehler** | 1/1 | ✅ 100% |
+| **Security Updates** | 1/1 | ✅ 100% |
+| **Dependency Updates** | 8/8 | ✅ 100% |
+| **Verbleibende Warnings** | 7 | ⚠️ Akzeptiert & dokumentiert |
+
+---
+
 ## [1.1.2] - 2025-10-04
 
 ### 🔧 Behoben - Build-Fehler
