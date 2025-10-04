@@ -2,6 +2,28 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [1.1.2] - 2025-10-04
+
+### 🔧 Behoben - Build-Fehler
+- **Fehlende Exports in utils.ts**:
+  - ✅ `formatCurrency` (Alias für `formatBetrag`) hinzugefügt
+  - ✅ `calculateFahrtkosten` (Alias für `berechneFahrtkosten`) hinzugefügt
+  - ✅ `KATEGORIE_LABELS` Objekt mit allen 11 Kategorien
+  - ✅ `STATUS_CONFIG` Objekt mit Status-Konfigurationen
+- **CSS Build-Fehler**:
+  - ✅ Problematische `@apply border-border` Regel aus `globals.css` entfernt
+  - ✅ Tailwind-Compilation läuft jetzt fehlerfrei
+- **Tailwind-Konfiguration erweitert**:
+  - ✅ `bdp-blue-dark` Farbe (#002952) hinzugefügt
+
+### 🎯 Deployment-Status
+- ✅ Alle TypeScript-Kompilierungsfehler behoben
+- ✅ Alle CSS-Build-Fehler behoben
+- ✅ Vercel-Deployment bereit
+- ✅ Dashboard.tsx importiert erfolgreich
+
+---
+
 ## [1.1.1] - 2025-10-04
 
 ### 🔧 Behoben

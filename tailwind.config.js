@@ -12,6 +12,7 @@ export default {
           blue: {
             DEFAULT: '#003D7A',
             light: '#0066CC',
+            dark: '#002952',
           },
           green: '#4A7729',
           orange: '#E87722',

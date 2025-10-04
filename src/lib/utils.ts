@@ -128,3 +128,34 @@ export function getStatusColor(status: string): string {
   };
   return colors[status] || 'bg-gray-100 text-gray-800';
 }
+
+// Alias für formatBetrag (für Kompatibilität mit Dashboard)
+export const formatCurrency = formatBetrag;
+
+// Alias für berechneFahrtkosten (für Kompatibilität mit AbrechnungForm)
+export const calculateFahrtkosten = berechneFahrtkosten;
+
+// Kategorie-Labels für UI
+export const KATEGORIE_LABELS: Record<string, string> = {
+  TEILNAHMEBEITRAEGE: 'Teilnahmebeiträge',
+  FAHRTKOSTEN: 'Fahrtkosten',
+  UNTERKUNFT: 'Unterkunft',
+  VERPFLEGUNG: 'Verpflegung',
+  MATERIAL: 'Material',
+  PORTO: 'Porto',
+  TELEKOMMUNIKATION: 'Telekommunikation',
+  SONSTIGE_AUSGABEN: 'Sonstige Ausgaben',
+  HONORARE: 'Honorare',
+  VERSICHERUNGEN: 'Versicherungen',
+  MIETE: 'Miete',
+};
+
+// Status-Konfiguration für UI
+export const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
+  ENTWURF: { label: 'Entwurf', color: 'gray' },
+  EINGEREICHT: { label: 'Eingereicht', color: 'blue' },
+  GEPRUEFT: { label: 'Geprüft', color: 'yellow' },
+  FREIGEGEBEN: { label: 'Freigegeben', color: 'green' },
+  VERSENDET: { label: 'Versendet', color: 'purple' },
+  ABGELEHNT: { label: 'Abgelehnt', color: 'red' },
+};

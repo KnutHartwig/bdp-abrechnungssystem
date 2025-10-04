@@ -1,6 +1,6 @@
 {
   "name": "bdp-abrechnungssystem",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "BdP Landesverband Baden-Württemberg Abrechnungssystem",
   "private": true,
   "type": "module",
