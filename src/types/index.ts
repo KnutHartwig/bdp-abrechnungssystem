@@ -1,102 +1,56 @@
+import type { Kategorie, Fahrzeugtyp, AbrechnungStatus } from '@prisma/client';
+
+export type { Kategorie, Fahrzeugtyp, AbrechnungStatus };
+
 export interface AbrechnungFormData {
   name: string;
   stamm: string;
   email: string;
   aktionId: string;
-  kategorieId: string;
+  kategorie: Kategorie;
   belegbeschreibung?: string;
   belegdatum: Date;
   betrag: number;
-  
-  // Fahrtkosten-spezifisch
-  fahrzeugtyp?: string;
-  kilometer?: number;
-  kmSatz?: number;
-  mitfahrer?: number;
-  lagerleitung?: boolean;
-  material?: boolean;
-  anhaenger?: boolean;
-  
-  // Beleg-Upload
   beleg?: File;
+  
+  // Fahrtkosten (optional)
+  fahrzeugtyp?: Fahrzeugtyp;
+  kilometer?: number;
+  mitfahrer?: number;
+  zuschlagLagerleitung?: boolean;
+  zuschlagMaterial?: boolean;
+  zuschlagAnhaenger?: boolean;
 }
 
-export interface AbrechnungMitRelationen {
+export interface AbrechnungWithAktion {
   id: string;
   name: string;
   stamm: string;
   email: string;
-  belegbeschreibung?: string;
+  kategorie: Kategorie;
+  belegbeschreibung?: string | null;
   belegdatum: Date;
   betrag: number;
-  belegUrl?: string;
-  belegDateiname?: string;
-  status: string;
+  belegUrl?: string | null;
+  status: AbrechnungStatus;
   createdAt: Date;
   updatedAt: Date;
-  
   aktion: {
     id: string;
     titel: string;
+    startdatum: Date;
+    enddatum: Date;
   };
-  
-  kategorie: {
-    id: string;
-    name: string;
-  };
-  
-  // Fahrtkosten
-  fahrzeugtyp?: string;
-  kilometer?: number;
-  kmSatz?: number;
-  mitfahrer?: number;
-  lagerleitung?: boolean;
-  material?: boolean;
-  anhaenger?: boolean;
+  fahrzeugtyp?: Fahrzeugtyp | null;
+  kilometer?: number | null;
+  kmSatz?: number | null;
+  mitfahrer?: number | null;
 }
 
-export interface FahrtkostenBerechnung {
-  basiskm: number;
-  basisSatz: number;
-  zuschlaege: {
-    lagerleitung: number;
-    material: number;
-    anhaenger: number;
-  };
-  gesamtSatz: number;
-  gesamtbetrag: number;
+export interface DashboardStats {
+  gesamt: number;
+  anzahlEintraege: number;
+  durchschnitt: number;
+  nachKategorie: Record<string, number>;
+  nachStatus: Record<string, number>;
 }
-
-export interface PDFExportData {
-  aktionId: string;
-  aktionTitel: string;
-  startdatum: Date;
-  enddatum: Date;
-  abrechnungen: AbrechnungMitRelationen[];
-  kategorien: Array<{
-    name: string;
-    posten: AbrechnungMitRelationen[];
-    summe: number;
-  }>;
-  gesamtsumme: number;
-}
-
-export const FAHRZEUGTYPEN = [
-  'PKW',
-  'Motorrad',
-  'Kleinbus/Transporter',
-  'Bus',
-] as const;
-
-export const KM_SAETZE: Record<string, number> = {
-  'PKW': 0.30,
-  'Motorrad': 0.20,
-  'Kleinbus/Transporter': 0.35,
-  'Bus': 0.50,
-};
-
-export const ZUSCHLAEGE = {
-  lagerleitung: 0.05,
-  material: 0.05,
-  anhaenger: 0.05,
-} as const;

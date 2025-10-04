@@ -1,78 +1,130 @@
-import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
-import { KM_SAETZE, ZUSCHLAEGE, FahrtkostenBerechnung } from "@/types";
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
+// Tailwind CSS Klassen zusammenführen
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatCurrency(amount: number): string {
+// Fahrtkosten-Berechnung basierend auf Excel-Logik
+export function berechneFahrtkosten(params: {
+  fahrzeugtyp: 'PKW' | 'TRANSPORTER' | 'BUS' | 'MOTORRAD';
+  kilometer: number;
+  mitfahrer: number;
+  zuschlagLagerleitung: boolean;
+  zuschlagMaterial: boolean;
+  zuschlagAnhaenger: boolean;
+}): number {
+  // Basis km-Sätze
+  const basisSaetze: Record<string, number> = {
+    PKW: 0.3,
+    TRANSPORTER: 0.4,
+    BUS: 0.5,
+    MOTORRAD: 0.1,
+  };
+
+  let satz = basisSaetze[params.fahrzeugtyp];
+
+  // Zuschläge addieren
+  if (params.zuschlagLagerleitung) satz += 0.05;
+  if (params.zuschlagMaterial) satz += 0.05;
+  if (params.zuschlagAnhaenger) satz += 0.05;
+
+  // Mitfahrer-Rabatt (10% pro Mitfahrer, max 30%)
+  const mitfahrerRabatt = Math.min(params.mitfahrer * 0.1, 0.3);
+  satz = satz * (1 - mitfahrerRabatt);
+
+  return params.kilometer * satz;
+}
+
+// Kategorie-Formatierung
+export function formatKategorie(kategorie: string): string {
+  const mapping: Record<string, string> = {
+    TEILNAHMEBEITRAEGE: 'Teilnahmebeiträge',
+    FAHRTKOSTEN: 'Fahrtkosten',
+    UNTERKUNFT: 'Unterkunft',
+    VERPFLEGUNG: 'Verpflegung',
+    MATERIAL: 'Material',
+    PORTO: 'Porto',
+    TELEKOMMUNIKATION: 'Telekommunikation',
+    SONSTIGE_AUSGABEN: 'Sonstige Ausgaben',
+    HONORARE: 'Honorare',
+    VERSICHERUNGEN: 'Versicherungen',
+    MIETE: 'Miete',
+  };
+  return mapping[kategorie] || kategorie;
+}
+
+// Status-Formatierung
+export function formatStatus(status: string): string {
+  const mapping: Record<string, string> = {
+    ENTWURF: 'Entwurf',
+    EINGEREICHT: 'Eingereicht',
+    GEPRUEFT: 'Geprüft',
+    FREIGEGEBEN: 'Freigegeben',
+    VERSENDET: 'Versendet',
+    ABGELEHNT: 'Abgelehnt',
+  };
+  return mapping[status] || status;
+}
+
+// Betrag formatieren (EUR)
+export function formatBetrag(betrag: number): string {
   return new Intl.NumberFormat('de-DE', {
     style: 'currency',
     currency: 'EUR',
-  }).format(amount);
+  }).format(betrag);
 }
 
-export function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat('de-DE').format(new Date(date));
+// Datum formatieren
+export function formatDatum(datum: Date | string): string {
+  const date = typeof datum === 'string' ? new Date(datum) : datum;
+  return new Intl.DateTimeFormat('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(date);
 }
 
-export function berechneKilometer(
-  fahrzeugtyp: string,
-  kilometer: number,
-  optionen: {
-    lagerleitung?: boolean;
-    material?: boolean;
-    anhaenger?: boolean;
-  } = {}
-): FahrtkostenBerechnung {
-  const basisSatz = KM_SAETZE[fahrzeugtyp] || 0;
-  
-  let gesamtSatz = basisSatz;
-  const zuschlaege = {
-    lagerleitung: 0,
-    material: 0,
-    anhaenger: 0,
+// Datei-Validierung
+export function validateFile(file: File): { valid: boolean; error?: string } {
+  const maxSize = parseInt(process.env.MAX_FILE_SIZE || '10485760'); // 10MB
+  const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+
+  if (file.size > maxSize) {
+    return {
+      valid: false,
+      error: `Datei zu groß. Maximum: ${(maxSize / 1024 / 1024).toFixed(0)}MB`,
+    };
+  }
+
+  if (!allowedTypes.includes(file.type)) {
+    return {
+      valid: false,
+      error: 'Nur PDF, JPG und PNG-Dateien sind erlaubt',
+    };
+  }
+
+  return { valid: true };
+}
+
+// Zufälligen Dateinamen generieren
+export function generateFileName(originalName: string): string {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 8);
+  const ext = originalName.split('.').pop();
+  return `${timestamp}-${random}.${ext}`;
+}
+
+// Status-Farben für UI
+export function getStatusColor(status: string): string {
+  const colors: Record<string, string> = {
+    ENTWURF: 'bg-gray-100 text-gray-800',
+    EINGEREICHT: 'bg-blue-100 text-blue-800',
+    GEPRUEFT: 'bg-yellow-100 text-yellow-800',
+    FREIGEGEBEN: 'bg-green-100 text-green-800',
+    VERSENDET: 'bg-purple-100 text-purple-800',
+    ABGELEHNT: 'bg-red-100 text-red-800',
   };
-  
-  if (optionen.lagerleitung) {
-    zuschlaege.lagerleitung = ZUSCHLAEGE.lagerleitung;
-    gesamtSatz += ZUSCHLAEGE.lagerleitung;
-  }
-  
-  if (optionen.material) {
-    zuschlaege.material = ZUSCHLAEGE.material;
-    gesamtSatz += ZUSCHLAEGE.material;
-  }
-  
-  if (optionen.anhaenger) {
-    zuschlaege.anhaenger = ZUSCHLAEGE.anhaenger;
-    gesamtSatz += ZUSCHLAEGE.anhaenger;
-  }
-  
-  const gesamtbetrag = kilometer * gesamtSatz;
-  
-  return {
-    basiskm: kilometer,
-    basisSatz,
-    zuschlaege,
-    gesamtSatz,
-    gesamtbetrag: Math.round(gesamtbetrag * 100) / 100,
-  };
-}
-
-export function validateEmail(email: string): boolean {
-  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return re.test(email);
-}
-
-export function validateBetrag(betrag: number): boolean {
-  return betrag > 0 && betrag <= 100000;
-}
-
-export function sanitizeFilename(filename: string): string {
-  return filename
-    .toLowerCase()
-    .replace(/[^a-z0-9.-]/g, '_')
-    .replace(/_{2,}/g, '_');
+  return colors[status] || 'bg-gray-100 text-gray-800';
 }

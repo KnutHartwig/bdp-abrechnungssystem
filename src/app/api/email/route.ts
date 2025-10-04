@@ -1,89 +1,78 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { sendeAbrechnungEmail, sendeTestEmail } from '@/lib/email';
+import { generateAbrechnungsPDF } from '@/lib/pdf-generator';
+import { sendAbrechnungToLandeskasse } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { exportId, test } = body;
+    const { aktionId } = await request.json();
 
-    // Test-Email
-    if (test) {
-      const success = await sendeTestEmail();
-      return NextResponse.json({ success });
-    }
-
-    // Abrechnung versenden
-    if (!exportId) {
+    if (!aktionId) {
       return NextResponse.json(
-        { error: 'Export-ID fehlt' },
+        { error: 'aktionId ist erforderlich' },
         { status: 400 }
       );
     }
 
-    const exportEntry = await prisma.export.findUnique({
-      where: { id: exportId },
+    // Abrechnungen laden
+    const abrechnungen = await prisma.abrechnung.findMany({
+      where: {
+        aktionId,
+        status: 'FREIGEGEBEN',
+      },
+      include: {
+        aktion: true,
+      },
     });
 
-    if (!exportEntry) {
+    if (abrechnungen.length === 0) {
       return NextResponse.json(
-        { error: 'Export nicht gefunden' },
+        { error: 'Keine freigegebenen Abrechnungen gefunden' },
         { status: 404 }
       );
     }
 
-    if (exportEntry.emailVersendet) {
-      return NextResponse.json(
-        { error: 'E-Mail wurde bereits versendet' },
-        { status: 400 }
-      );
-    }
+    // PDF generieren
+    const pdfBuffer = await generateAbrechnungsPDF(abrechnungen as any);
 
-    // Aktion laden für zusätzliche Daten
-    const aktion = await prisma.aktion.findUnique({
-      where: { id: exportEntry.aktionId },
-    });
-
-    if (!aktion) {
-      return NextResponse.json(
-        { error: 'Aktion nicht gefunden' },
-        { status: 404 }
-      );
-    }
+    // Statistiken berechnen
+    const gesamtbetrag = abrechnungen.reduce(
+      (sum, a) => sum + Number(a.betrag),
+      0
+    );
 
     // E-Mail versenden
-    const success = await sendeAbrechnungEmail({
-      aktionTitel: exportEntry.aktionTitel,
-      startdatum: aktion.startdatum,
-      enddatum: aktion.enddatum,
-      anzahlPosten: exportEntry.anzahlPosten,
-      gesamtsumme: exportEntry.gesamtsumme,
-      pdfPfad: exportEntry.dateipfad,
-    });
+    const success = await sendAbrechnungToLandeskasse(
+      abrechnungen[0].aktion.titel,
+      pdfBuffer,
+      abrechnungen.length,
+      gesamtbetrag
+    );
 
     if (!success) {
       return NextResponse.json(
-        { error: 'Fehler beim E-Mail-Versand' },
+        { error: 'E-Mail konnte nicht versendet werden' },
         { status: 500 }
       );
     }
 
-    // Export aktualisieren
-    await prisma.export.update({
-      where: { id: exportId },
+    // Status auf VERSENDET setzen
+    await prisma.abrechnung.updateMany({
+      where: {
+        id: { in: abrechnungen.map((a) => a.id) },
+      },
       data: {
-        emailVersendet: true,
-        emailAn: process.env.EMAIL_TO,
-        versandtAm: new Date(),
+        status: 'VERSENDET',
       },
     });
 
     return NextResponse.json({
       success: true,
-      message: 'E-Mail erfolgreich versendet',
+      anzahl: abrechnungen.length,
+      gesamtbetrag,
     });
   } catch (error) {
-    console.error('Email sending error:', error);
+    console.error('Email Error:', error);
     return NextResponse.json(
       { error: 'Fehler beim E-Mail-Versand' },
       { status: 500 }

@@ -1,4 +1,6 @@
 // Prisma Schema für BdP Abrechnungssystem
+// Version: 6.0+ (ESM-kompatibel)
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,98 +10,111 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Benutzer für Admin-Zugriff
+// User-Management für Admin-Bereiche
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
-  name      String
-  password  String   // bcrypt hash
-  role      String   @default("admin") // admin, landeskasse
+  name      String?
+  password  String
+  role      UserRole @default(ADMIN)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@map("users")
 }
 
-// Aktionen (Maßnahmen/Events)
+enum UserRole {
+  ADMIN
+  LANDESKASSE
+  SUPER_ADMIN
+}
+
+// Aktionsverwaltung
 model Aktion {
   id           String        @id @default(cuid())
   titel        String
   startdatum   DateTime
   enddatum     DateTime
-  status       String        @default("aktiv") // aktiv, inaktiv, abgeschlossen
-  beschreibung String?
+  status       AktionStatus  @default(AKTIV)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   abrechnungen Abrechnung[]
+
+  @@map("aktionen")
 }
 
-// Kategorien für Abrechnungen
-model Kategorie {
-  id           String       @id @default(cuid())
-  name         String       @unique
-  beschreibung String?
-  sortierung   Int          @default(0)
-  aktiv        Boolean      @default(true)
-  abrechnungen Abrechnung[]
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+enum AktionStatus {
+  AKTIV
+  INAKTIV
+  ABGESCHLOSSEN
 }
 
-// Haupttabelle: Abrechnungsposten
+// Zentrale Abrechnungstabelle
 model Abrechnung {
   id                String    @id @default(cuid())
   
-  // Persönliche Daten
+  // Personen-Daten
   name              String
   stamm             String
   email             String
   
-  // Referenzen
+  // Aktion-Referenz
   aktionId          String
   aktion            Aktion    @relation(fields: [aktionId], references: [id], onDelete: Cascade)
-  kategorieId       String
-  kategorie         Kategorie @relation(fields: [kategorieId], references: [id])
   
-  // Belegdaten
+  // Kategorie (basierend auf Excel-Arbeitsblättern)
+  kategorie         Kategorie
+  
+  // Beleg-Informationen
   belegbeschreibung String?
   belegdatum        DateTime
-  betrag            Float
-  belegUrl          String?   // URL zum hochgeladenen Beleg
-  belegDateiname    String?
+  betrag            Decimal   @db.Decimal(10, 2)
+  belegUrl          String?
   
-  // Fahrtkosten-spezifisch (optional)
-  fahrzeugtyp       String?   // PKW, Motorrad, etc.
-  kilometer         Float?
-  kmSatz            Float?    // 0.10 - 0.50 EUR
-  mitfahrer         Int?
-  lagerleitung      Boolean   @default(false) // +0.05 EUR
-  material          Boolean   @default(false) // +0.05 EUR
-  anhaenger         Boolean   @default(false) // +0.05 EUR
+  // Fahrtkosten-spezifische Felder (optional)
+  kilometerstand    Int?
+  fahrzeugtyp       Fahrzeugtyp?
+  mitfahrer         Int?      @default(0)
+  zuschlagLagerleitung Boolean @default(false)
+  zuschlagMaterial  Boolean   @default(false)
+  zuschlagAnhaenger Boolean   @default(false)
   
   // Status und Metadaten
-  status            String    @default("entwurf") // entwurf, eingereicht, versendet
-  notizen           String?
-  
+  status            AbrechnungStatus @default(ENTWURF)
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
-  
+
   @@index([aktionId])
-  @@index([kategorieId])
   @@index([status])
+  @@map("abrechnungen")
 }
 
-// Protokollierung von PDF-Exporten und E-Mail-Versand
-model Export {
-  id            String   @id @default(cuid())
-  aktionId      String
-  aktionTitel   String
-  dateiname     String
-  dateipfad     String
-  anzahlPosten  Int
-  gesamtsumme   Float
-  emailVersendet Boolean @default(false)
-  emailAn       String?
-  versandtAm    DateTime?
-  createdAt     DateTime @default(now())
-  
-  @@index([aktionId])
+// 11 Kategorien aus Excel-Vorlage
+enum Kategorie {
+  TEILNAHMEBEITRAEGE
+  FAHRTKOSTEN
+  UNTERKUNFT
+  VERPFLEGUNG
+  MATERIAL
+  PORTO
+  TELEKOMMUNIKATION
+  VERSICHERUNG
+  HONORARE
+  OFFENTLICHKEITSARBEIT
+  SONSTIGE_AUSGABEN
+}
+
+enum Fahrzeugtyp {
+  PKW              // 0.30 EUR/km
+  TRANSPORTER      // 0.40 EUR/km
+  BUS              // 0.50 EUR/km
+}
+
+enum AbrechnungStatus {
+  ENTWURF
+  EINGEREICHT
+  GEPRUEFT
+  FREIGEGEBEN
+  VERSENDET
+  ABGESCHLOSSEN
 }

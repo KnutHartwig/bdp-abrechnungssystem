@@ -1,110 +1,132 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import Link from 'next/link';
+import { useState } from 'react'
+import { signIn } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const router = useRouter()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+    e.preventDefault()
+    setError('')
+    setLoading(true)
 
     try {
       const result = await signIn('credentials', {
         email,
         password,
         redirect: false,
-      });
+      })
 
       if (result?.error) {
-        setError('Ungültige Anmeldedaten');
+        setError('Ungültige Anmeldedaten')
+        setLoading(false)
       } else {
-        router.push('/admin');
-        router.refresh();
+        router.push('/admin')
+        router.refresh()
       }
-    } catch (err) {
-      setError('Ein Fehler ist aufgetreten');
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      setError('Ein Fehler ist aufgetreten')
+      setLoading(false)
     }
-  };
+  }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <div className="bdp-header rounded-t-lg text-center">
-          <h1 className="text-3xl font-bold">Admin-Login</h1>
-          <p className="opacity-90 mt-2">BdP Abrechnungssystem</p>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-bdp-blue via-bdp-blue-light to-bdp-green py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full">
+        {/* Logo/Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-white mb-2">
+            BdP Abrechnungssystem
+          </h1>
+          <p className="text-white/90 text-lg">
+            Admin-Login
+          </p>
         </div>
 
-        <div className="bdp-card rounded-t-none">
+        {/* Login Card */}
+        <div className="bg-white rounded-lg shadow-2xl p-8">
+          <h2 className="text-2xl font-bold text-bdp-blue mb-6 text-center">
+            Anmelden
+          </h2>
+
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-              {error}
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{error}</p>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <Label htmlFor="email">E-Mail-Adresse</Label>
-              <Input
+              <label htmlFor="email" className="label">
+                E-Mail-Adresse
+              </label>
+              <input
                 id="email"
                 type="email"
-                required
                 value={email}
-                onChange={e => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value)}
+                className="input"
                 placeholder="admin@bdp-bawue.de"
+                required
+                disabled={loading}
               />
             </div>
 
             <div>
-              <Label htmlFor="password">Passwort</Label>
-              <Input
+              <label htmlFor="password" className="label">
+                Passwort
+              </label>
+              <input
                 id="password"
                 type="password"
-                required
                 value={password}
-                onChange={e => setPassword(e.target.value)}
+                onChange={(e) => setPassword(e.target.value)}
+                className="input"
+                placeholder="••••••••"
+                required
+                disabled={loading}
               />
             </div>
 
-            <Button
+            <button
               type="submit"
               disabled={loading}
-              className="w-full bdp-btn-primary"
+              className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Anmeldung läuft...' : 'Anmelden'}
-            </Button>
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Wird angemeldet...
+                </span>
+              ) : (
+                'Anmelden'
+              )}
+            </button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-gray-200">
-            <p className="text-sm text-gray-600 text-center">
-              Standard-Login (Entwicklung):
+          <div className="mt-6 text-center text-sm text-gray-600">
+            <p>
+              Nur für autorisierte Administratoren
             </p>
-            <p className="text-xs text-gray-500 text-center mt-1">
-              E-Mail: admin@bdp-bawue.de<br />
-              Passwort: admin123
-            </p>
-          </div>
-
-          <div className="mt-4 text-center">
-            <Link href="/" className="text-sm text-bdp-blue hover:underline">
-              ← Zurück zur Startseite
-            </Link>
           </div>
         </div>
+
+        {/* Back Link */}
+        <div className="mt-6 text-center">
+          <a 
+            href="/abrechnung" 
+            className="text-white hover:underline text-sm"
+          >
+            ← Zurück zur Abrechnung
+          </a>
+        </div>
       </div>
-    </main>
-  );
+    </div>
+  )
 }

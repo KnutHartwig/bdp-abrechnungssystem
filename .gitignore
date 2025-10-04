@@ -35,6 +35,10 @@ next-env.d.ts
 
 # uploads
 /public/uploads/*
-!/public/uploads/.gitkeep
 /public/pdfs/*
-!/public/pdfs/.gitkeep
+!public/uploads/.gitkeep
+!public/pdfs/.gitkeep
+
+# prisma
+/prisma/dev.db
+/prisma/dev.db-journal

@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  reactStrictMode: true,
+  swcMinify: true,
   experimental: {
     serverActions: {
       bodySizeLimit: '10mb',
@@ -8,6 +10,6 @@ const nextConfig = {
   images: {
     domains: ['localhost'],
   },
-};
+}
 
-export default nextConfig;
+export default nextConfig

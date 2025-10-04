@@ -1,19 +1,22 @@
 {
   "name": "bdp-abrechnungssystem",
-  "version": "1.0.0",
+  "version": "1.1.0",
+  "description": "BdP Landesverband Baden-Württemberg Abrechnungssystem",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "next lint",
-    "postinstall": "prisma generate"
-  },
-  "prisma": {
-    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
+    "lint": "eslint .",
+    "postinstall": "prisma generate",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:studio": "prisma studio"
   },
   "dependencies": {
-    "@prisma/client": "^5.18.0",
+    "@prisma/client": "^6.0.0",
     "@radix-ui/react-dialog": "^1.1.1",
     "@radix-ui/react-dropdown-menu": "^2.1.1",
     "@radix-ui/react-label": "^2.1.0",
@@ -36,18 +39,19 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.1.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.2.0",
     "@types/nodemailer": "^6.4.15",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.20",
-    "eslint": "^8.57.0",
+    "eslint": "^9.9.1",
     "eslint-config-next": "14.2.5",
     "postcss": "^8.4.41",
-    "prisma": "^5.18.0",
-    "tailwindcss": "^3.4.9",
-    "ts-node": "^10.9.2",
+    "prisma": "^6.0.0",
+    "tailwindcss": "^3.4.10",
+    "tsx": "^4.17.0",
     "typescript": "^5.5.4"
   },
   "engines": {

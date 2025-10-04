@@ -1,123 +1,150 @@
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { FileText, Users, Send, CheckCircle } from 'lucide-react';
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-      <div className="container mx-auto px-4 py-12">
-        {/* Header */}
-        <div className="bdp-header rounded-lg mb-8 text-center">
-          <h1 className="text-4xl font-bold mb-2">BdP Abrechnungssystem</h1>
-          <p className="text-lg opacity-90">
-            Landesverband Baden-Württemberg e.V.
+    <div className="py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Hero Section */}
+        <div className="text-center mb-16">
+          <h1 className="text-4xl font-bold text-bdp-blue-dark mb-4">
+            Willkommen beim BdP Abrechnungssystem
+          </h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            Einfache und schnelle Abrechnung für alle Aktionen und Maßnahmen
+            des BdP Landesverbands Baden-Württemberg
           </p>
+          <div className="mt-8 flex justify-center gap-4">
+            <Link
+              href="/abrechnung"
+              className="bg-bdp-blue hover:bg-bdp-blue-dark text-white px-8 py-3 rounded-lg font-medium transition"
+            >
+              Jetzt Abrechnung einreichen
+            </Link>
+            <Link
+              href="/admin/login"
+              className="bg-white hover:bg-gray-50 text-bdp-blue border-2 border-bdp-blue px-8 py-3 rounded-lg font-medium transition"
+            >
+              Admin-Login
+            </Link>
+          </div>
         </div>
 
-        {/* Hauptinhalt */}
-        <div className="max-w-4xl mx-auto">
-          <div className="bdp-card mb-8">
-            <h2 className="text-2xl font-bold mb-4 text-bdp-blue">
-              Willkommen beim Abrechnungssystem
-            </h2>
-            <p className="text-gray-700 mb-6">
-              Mit diesem System können Sie Ihre Abrechnungen für BdP-Maßnahmen einfach 
-              und digital einreichen. Alle Daten werden sicher gespeichert und automatisch 
-              an die Landeskasse weitergeleitet.
+        {/* Features */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+          <div className="bg-white p-6 rounded-lg shadow-md text-center">
+            <FileText className="w-12 h-12 text-bdp-blue mx-auto mb-4" />
+            <h3 className="font-bold text-lg mb-2">Einfache Eingabe</h3>
+            <p className="text-sm text-gray-600">
+              Intuitive Formulare für schnelle Abrechnungen
             </p>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow-md text-center">
+            <Users className="w-12 h-12 text-bdp-green mx-auto mb-4" />
+            <h3 className="font-bold text-lg mb-2">11 Kategorien</h3>
+            <p className="text-sm text-gray-600">
+              Von Teilnahmebeiträgen bis Fahrtkosten
+            </p>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow-md text-center">
+            <CheckCircle className="w-12 h-12 text-bdp-gold mx-auto mb-4" />
+            <h3 className="font-bold text-lg mb-2">Automatische Berechnung</h3>
+            <p className="text-sm text-gray-600">
+              Fahrtkosten werden automatisch kalkuliert
+            </p>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow-md text-center">
+            <Send className="w-12 h-12 text-bdp-blue-dark mx-auto mb-4" />
+            <h3 className="font-bold text-lg mb-2">Direktversand</h3>
+            <p className="text-sm text-gray-600">
+              PDFs werden automatisch an die Landeskasse gesendet
+            </p>
+          </div>
+        </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Teilnehmende */}
-              <div className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
-                <h3 className="text-xl font-semibold mb-3 text-bdp-blue">
-                  Für Teilnehmende
-                </h3>
-                <ul className="space-y-2 mb-6 text-gray-700">
-                  <li className="flex items-start">
-                    <span className="text-bdp-green mr-2">✓</span>
-                    Einfache Online-Eingabe
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-bdp-green mr-2">✓</span>
-                    Belege direkt hochladen
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-bdp-green mr-2">✓</span>
-                    Automatische Fahrtkostenberechnung
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-bdp-green mr-2">✓</span>
-                    Keine Anmeldung erforderlich
-                  </li>
-                </ul>
-                <Link href="/abrechnung">
-                  <Button className="w-full bdp-btn-primary">
-                    Abrechnung einreichen
-                  </Button>
-                </Link>
+        {/* Anleitung */}
+        <div className="bg-white rounded-lg shadow-md p-8">
+          <h2 className="text-2xl font-bold text-bdp-blue-dark mb-6">
+            So funktioniert's
+          </h2>
+          <div className="space-y-4">
+            <div className="flex items-start">
+              <div className="flex-shrink-0 w-8 h-8 bg-bdp-blue text-white rounded-full flex items-center justify-center font-bold mr-4">
+                1
               </div>
-
-              {/* Admins */}
-              <div className="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow">
-                <h3 className="text-xl font-semibold mb-3 text-bdp-blue">
-                  Für Admins
-                </h3>
-                <ul className="space-y-2 mb-6 text-gray-700">
-                  <li className="flex items-start">
-                    <span className="text-bdp-green mr-2">✓</span>
-                    Übersicht aller Abrechnungen
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-bdp-green mr-2">✓</span>
-                    Freigabe-Workflow
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-bdp-green mr-2">✓</span>
-                    Automatische PDF-Erstellung
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-bdp-green mr-2">✓</span>
-                    E-Mail-Versand an Landeskasse
-                  </li>
-                </ul>
-                <Link href="/admin">
-                  <Button className="w-full bdp-btn-secondary" variant="secondary">
-                    Zum Admin-Bereich
-                  </Button>
-                </Link>
+              <div>
+                <h3 className="font-bold mb-1">Formular ausfüllen</h3>
+                <p className="text-gray-600">
+                  Gebe deine Daten ein, wähle die Aktion und Kategorie
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start">
+              <div className="flex-shrink-0 w-8 h-8 bg-bdp-blue text-white rounded-full flex items-center justify-center font-bold mr-4">
+                2
+              </div>
+              <div>
+                <h3 className="font-bold mb-1">Belege hochladen</h3>
+                <p className="text-gray-600">
+                  Lade optional Belege als PDF, JPG oder PNG hoch (max. 10MB)
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start">
+              <div className="flex-shrink-0 w-8 h-8 bg-bdp-blue text-white rounded-full flex items-center justify-center font-bold mr-4">
+                3
+              </div>
+              <div>
+                <h3 className="font-bold mb-1">Admin-Prüfung</h3>
+                <p className="text-gray-600">
+                  Deine Abrechnung wird von Admins geprüft und freigegeben
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start">
+              <div className="flex-shrink-0 w-8 h-8 bg-bdp-green text-white rounded-full flex items-center justify-center font-bold mr-4">
+                4
+              </div>
+              <div>
+                <h3 className="font-bold mb-1">Automatischer Versand</h3>
+                <p className="text-gray-600">
+                  Die fertige PDF wird automatisch an die Landeskasse gesendet
+                </p>
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Info-Box */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-2 text-bdp-blue">
-              Hinweise
-            </h3>
-            <ul className="space-y-2 text-gray-700 text-sm">
-              <li>
-                • Alle Abrechnungen müssen innerhalb von 4 Wochen nach der Maßnahme eingereicht werden
-              </li>
-              <li>
-                • Belege können als PDF, JPG oder PNG hochgeladen werden (max. 5 MB)
-              </li>
-              <li>
-                • Bei Fahrtkosten werden die km-Sätze automatisch berechnet
-              </li>
-              <li>
-                • Für Fragen wenden Sie sich bitte an: kasse@bdp-bawue.de
-              </li>
-            </ul>
+        {/* Kategorien-Übersicht */}
+        <div className="mt-12 bg-gray-100 rounded-lg p-8">
+          <h2 className="text-2xl font-bold text-bdp-blue-dark mb-4">
+            Verfügbare Kategorien
+          </h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              'Teilnahmebeiträge',
+              'Fahrtkosten',
+              'Unterkunft',
+              'Verpflegung',
+              'Material',
+              'Porto',
+              'Telekommunikation',
+              'Sonstige Ausgaben',
+              'Honorare',
+              'Versicherungen',
+              'Miete',
+            ].map((kategorie) => (
+              <div
+                key={kategorie}
+                className="bg-white px-4 py-2 rounded-md shadow-sm"
+              >
+                <CheckCircle className="w-4 h-4 text-bdp-green inline mr-2" />
+                {kategorie}
+              </div>
+            ))}
           </div>
         </div>
       </div>
-
-      {/* Footer */}
-      <footer className="bg-gray-100 border-t border-gray-200 mt-12 py-6">
-        <div className="container mx-auto px-4 text-center text-gray-600 text-sm">
-          <p>© 2025 BdP Landesverband Baden-Württemberg e.V.</p>
-          <p className="mt-1">Abrechnungssystem v1.0</p>
-        </div>
-      </footer>
-    </main>
+    </div>
   );
 }
