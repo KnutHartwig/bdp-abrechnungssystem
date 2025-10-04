@@ -7,8 +7,11 @@ import { Button } from '@/components/ui/button';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { KATEGORIE_LABELS, STATUS_LABELS } from '@/types';
 
+// Force dynamic rendering - verhindert Static Generation
+export const dynamic = 'force-dynamic';
+
 export default function AdminPage() {
-  const { data: session, status } = useSession();
+  const session = useSession();
   const router = useRouter();
   const [abrechnungen, setAbrechnungen] = useState<any[]>([]);
   const [aktionen, setAktionen] = useState<any[]>([]);
@@ -16,10 +19,10 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    if (session.status === 'unauthenticated') {
       router.push('/admin/login');
     }
-  }, [status, router]);
+  }, [session.status, router]);
 
   useEffect(() => {
     // Lade Aktionen
@@ -139,16 +142,11 @@ export default function AdminPage() {
     }
   };
 
-  // Guard gegen Static Generation
-  if (typeof window === 'undefined') {
+  if (session.status === 'loading') {
     return <div className="container mx-auto px-4 py-8">Lädt...</div>;
   }
 
-  if (status === 'loading') {
-    return <div className="container mx-auto px-4 py-8">Lädt...</div>;
-  }
-
-  if (!session) {
+  if (!session.data) {
     return null;
   }
 
@@ -160,7 +158,7 @@ export default function AdminPage() {
         <h1 className="text-3xl font-bold">Admin-Dashboard</h1>
         <div className="text-right">
           <p className="text-sm text-gray-600">Angemeldet als</p>
-          <p className="font-medium">{session.user.email}</p>
+          <p className="font-medium">{session.data.user.email}</p>
         </div>
       </div>
 
