@@ -1,44 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { berechneFahrtkosten } from '@/lib/utils';
-import { z } from 'zod';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { validateBetrag, validateKilometer, berechneFahrtkosten } from '@/lib/utils';
+import { Kategorie, Fahrzeugtyp } from '@prisma/client';
 
-// Validation Schema
-const abrechnungSchema = z.object({
-  name: z.string().min(1, 'Name ist erforderlich'),
-  stamm: z.string().min(1, 'Stamm ist erforderlich'),
-  email: z.string().email('Gültige E-Mail erforderlich'),
-  aktionId: z.string(),
-  kategorie: z.enum([
-    'TEILNAHMEBEITRAEGE',
-    'FAHRTKOSTEN',
-    'UNTERKUNFT',
-    'VERPFLEGUNG',
-    'MATERIAL',
-    'PORTO',
-    'TELEKOMMUNIKATION',
-    'SONSTIGE_AUSGABEN',
-    'HONORARE',
-    'VERSICHERUNGEN',
-    'MIETE',
-  ]),
-  belegbeschreibung: z.string().optional(),
-  belegdatum: z.string(),
-  betrag: z.number().positive('Betrag muss positiv sein'),
-  belegUrl: z.string().optional(),
-  // Fahrtkosten
-  fahrzeugtyp: z.enum(['PKW', 'TRANSPORTER', 'BUS', 'MOTORRAD']).optional(),
-  kilometer: z.number().optional(),
-  mitfahrer: z.number().optional(),
-  zuschlagLagerleitung: z.boolean().optional(),
-  zuschlagMaterial: z.boolean().optional(),
-  zuschlagAnhaenger: z.boolean().optional(),
-});
-
-// GET - Liste aller Abrechnungen
-export async function GET(request: NextRequest) {
+// GET - Alle Abrechnungen oder gefiltert
+export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = new URL(req.url);
     const aktionId = searchParams.get('aktionId');
     const status = searchParams.get('status');
 
@@ -63,149 +33,189 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(abrechnungen);
+    return NextResponse.json({ success: true, data: abrechnungen });
   } catch (error) {
-    console.error('GET Error:', error);
+    console.error('Fehler beim Laden der Abrechnungen:', error);
     return NextResponse.json(
-      { error: 'Fehler beim Laden der Abrechnungen' },
+      { success: false, error: 'Fehler beim Laden der Abrechnungen' },
       { status: 500 }
     );
   }
 }
 
 // POST - Neue Abrechnung erstellen
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const body = await request.json();
+    const body = await req.json();
     
-    // Validierung
-    const validated = abrechnungSchema.parse(body);
+    const {
+      name,
+      stamm,
+      email,
+      aktionId,
+      kategorie,
+      belegbeschreibung,
+      belegdatum,
+      betrag,
+      belegUrl,
+      kilometer,
+      fahrzeugtyp,
+      mitfahrer,
+      zuschlagLagerleitung,
+      zuschlagMaterial,
+      zuschlagAnhaenger,
+    } = body;
 
-    // Fahrtkosten automatisch berechnen, falls Kategorie FAHRTKOSTEN
-    let betrag = validated.betrag;
-    let kmSatz = null;
-
-    if (
-      validated.kategorie === 'FAHRTKOSTEN' &&
-      validated.fahrzeugtyp &&
-      validated.kilometer
-    ) {
-      betrag = berechneFahrtkosten({
-        fahrzeugtyp: validated.fahrzeugtyp,
-        kilometer: validated.kilometer,
-        mitfahrer: validated.mitfahrer || 0,
-        zuschlagLagerleitung: validated.zuschlagLagerleitung || false,
-        zuschlagMaterial: validated.zuschlagMaterial || false,
-        zuschlagAnhaenger: validated.zuschlagAnhaenger || false,
-      });
-
-      // Basis-Satz speichern
-      const basisSaetze: Record<string, number> = {
-        PKW: 0.3,
-        TRANSPORTER: 0.4,
-        BUS: 0.5,
-        MOTORRAD: 0.1,
-      };
-      kmSatz = basisSaetze[validated.fahrzeugtyp];
+    // Validierungen
+    if (!name || !stamm || !email || !aktionId || !kategorie || !belegdatum) {
+      return NextResponse.json(
+        { success: false, error: 'Pflichtfelder fehlen' },
+        { status: 400 }
+      );
     }
 
-    // In Datenbank speichern
+    // Bei Fahrtkosten: Automatische Berechnung
+    let finalBetrag = betrag;
+    let kmSatz = null;
+
+    if (kategorie === Kategorie.FAHRTKOSTEN && kilometer && fahrzeugtyp) {
+      const kmValidation = validateKilometer(kilometer);
+      if (!kmValidation.valid) {
+        return NextResponse.json(
+          { success: false, error: kmValidation.error },
+          { status: 400 }
+        );
+      }
+
+      const berechnung = berechneFahrtkosten(
+        kilometer,
+        fahrzeugtyp as Fahrzeugtyp,
+        zuschlagLagerleitung,
+        zuschlagMaterial,
+        zuschlagAnhaenger
+      );
+
+      finalBetrag = berechnung.gesamtBetrag;
+      kmSatz = berechnung.gesamtSatz;
+    }
+
+    // Betrag validieren
+    const betragValidation = validateBetrag(finalBetrag);
+    if (!betragValidation.valid) {
+      return NextResponse.json(
+        { success: false, error: betragValidation.error },
+        { status: 400 }
+      );
+    }
+
+    // Aktion existiert?
+    const aktion = await prisma.aktion.findUnique({
+      where: { id: aktionId },
+    });
+
+    if (!aktion) {
+      return NextResponse.json(
+        { success: false, error: 'Aktion nicht gefunden' },
+        { status: 404 }
+      );
+    }
+
+    // Abrechnung erstellen
     const abrechnung = await prisma.abrechnung.create({
       data: {
-        name: validated.name,
-        stamm: validated.stamm,
-        email: validated.email,
-        aktionId: validated.aktionId,
-        kategorie: validated.kategorie,
-        belegbeschreibung: validated.belegbeschreibung,
-        belegdatum: new Date(validated.belegdatum),
-        betrag,
-        belegUrl: validated.belegUrl,
-        status: 'EINGEREICHT',
-        // Fahrtkosten-Felder
-        fahrzeugtyp: validated.fahrzeugtyp,
-        kilometer: validated.kilometer,
+        name,
+        stamm,
+        email,
+        aktionId,
+        kategorie,
+        belegbeschreibung,
+        belegdatum: new Date(belegdatum),
+        betrag: finalBetrag,
+        belegUrl,
+        kilometer,
+        fahrzeugtyp,
         kmSatz,
-        mitfahrer: validated.mitfahrer,
-        zuschlagLagerleitung: validated.zuschlagLagerleitung,
-        zuschlagMaterial: validated.zuschlagMaterial,
-        zuschlagAnhaenger: validated.zuschlagAnhaenger,
+        mitfahrer: mitfahrer || 0,
+        zuschlagLagerleitung: zuschlagLagerleitung || false,
+        zuschlagMaterial: zuschlagMaterial || false,
+        zuschlagAnhaenger: zuschlagAnhaenger || false,
+        status: 'ENTWURF',
       },
       include: {
         aktion: true,
       },
     });
 
-    return NextResponse.json(abrechnung, { status: 201 });
+    return NextResponse.json({ success: true, data: abrechnung }, { status: 201 });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validierungsfehler', details: error.errors },
-        { status: 400 }
-      );
-    }
-
-    console.error('POST Error:', error);
+    console.error('Fehler beim Erstellen der Abrechnung:', error);
     return NextResponse.json(
-      { error: 'Fehler beim Erstellen der Abrechnung' },
+      { success: false, error: 'Fehler beim Erstellen der Abrechnung' },
       { status: 500 }
     );
   }
 }
 
-// PATCH - Abrechnung aktualisieren (z.B. Status ändern)
-export async function PATCH(request: NextRequest) {
+// PUT - Abrechnung aktualisieren (nur für Admins)
+export async function PUT(req: NextRequest) {
   try {
-    const body = await request.json();
-    const { id, ...updateData } = body;
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ success: false, error: 'Nicht authentifiziert' }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { id, status, ...updateData } = body;
 
     if (!id) {
-      return NextResponse.json(
-        { error: 'ID ist erforderlich' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'ID fehlt' }, { status: 400 });
     }
 
     const abrechnung = await prisma.abrechnung.update({
       where: { id },
-      data: updateData,
+      data: {
+        ...updateData,
+        status: status || updateData.status,
+      },
       include: {
         aktion: true,
       },
     });
 
-    return NextResponse.json(abrechnung);
+    return NextResponse.json({ success: true, data: abrechnung });
   } catch (error) {
-    console.error('PATCH Error:', error);
+    console.error('Fehler beim Aktualisieren der Abrechnung:', error);
     return NextResponse.json(
-      { error: 'Fehler beim Aktualisieren der Abrechnung' },
+      { success: false, error: 'Fehler beim Aktualisieren der Abrechnung' },
       { status: 500 }
     );
   }
 }
 
-// DELETE - Abrechnung löschen
-export async function DELETE(request: NextRequest) {
+// DELETE - Abrechnung löschen (nur für Admins)
+export async function DELETE(req: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== 'LANDESKASSE') {
+      return NextResponse.json({ success: false, error: 'Keine Berechtigung' }, { status: 403 });
+    }
+
+    const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 
     if (!id) {
-      return NextResponse.json(
-        { error: 'ID ist erforderlich' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'ID fehlt' }, { status: 400 });
     }
 
     await prisma.abrechnung.delete({
       where: { id },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: 'Abrechnung gelöscht' });
   } catch (error) {
-    console.error('DELETE Error:', error);
+    console.error('Fehler beim Löschen der Abrechnung:', error);
     return NextResponse.json(
-      { error: 'Fehler beim Löschen der Abrechnung' },
+      { success: false, error: 'Fehler beim Löschen der Abrechnung' },
       { status: 500 }
     );
   }

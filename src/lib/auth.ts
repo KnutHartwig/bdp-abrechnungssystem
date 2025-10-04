@@ -1,46 +1,33 @@
-import type { NextAuthOptions, User as NextAuthUser } from 'next-auth'
-import type { JWT } from 'next-auth/jwt'
-import CredentialsProvider from 'next-auth/providers/credentials'
-import bcrypt from 'bcryptjs'
-import { prisma } from './prisma'
-
-// Typen für NextAuth
-interface CustomUser extends NextAuthUser {
-  role?: string
-}
-
-interface CustomJWT extends JWT {
-  role?: string
-}
+import { NextAuthOptions } from 'next-auth';
+import CredentialsProvider from 'next-auth/providers/credentials';
+import { compare } from 'bcryptjs';
+import { prisma } from './prisma';
 
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: 'Credentials',
       credentials: {
-        email: { label: 'Email', type: 'email' },
+        email: { label: 'E-Mail', type: 'email' },
         password: { label: 'Passwort', type: 'password' },
       },
-      async authorize(credentials): Promise<CustomUser | null> {
+      async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          return null
+          return null;
         }
 
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
-        })
+        });
 
         if (!user) {
-          return null
+          return null;
         }
 
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        )
+        const isPasswordValid = await compare(credentials.password, user.password);
 
         if (!isPasswordValid) {
-          return null
+          return null;
         }
 
         return {
@@ -48,29 +35,60 @@ export const authOptions: NextAuthOptions = {
           email: user.email,
           name: user.name,
           role: user.role,
-        }
+        };
       },
     }),
   ],
+  
   callbacks: {
-    async jwt({ token, user }): Promise<CustomJWT> {
+    async jwt({ token, user }) {
       if (user) {
-        token.role = (user as CustomUser).role
+        token.id = user.id;
+        token.role = user.role;
       }
-      return token
+      return token;
     },
+    
     async session({ session, token }) {
       if (session.user) {
-        (session.user as CustomUser).role = (token as CustomJWT).role
+        session.user.id = token.id as string;
+        session.user.role = token.role as string;
       }
-      return session
+      return session;
     },
   },
+  
   pages: {
     signIn: '/admin/login',
   },
+  
   session: {
     strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 Tage
   },
+  
   secret: process.env.NEXTAUTH_SECRET,
+};
+
+// Type extensions für NextAuth
+declare module 'next-auth' {
+  interface User {
+    role: string;
+  }
+  
+  interface Session {
+    user: {
+      id: string;
+      email: string;
+      name?: string | null;
+      role: string;
+    };
+  }
+}
+
+declare module 'next-auth/jwt' {
+  interface JWT {
+    id: string;
+    role: string;
+  }
 }

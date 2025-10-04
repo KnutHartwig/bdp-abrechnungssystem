@@ -1,132 +1,89 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { signIn } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useState } from 'react';
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
-export default function LoginPage() {
-  const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+export default function AdminLoginPage() {
+  const router = useRouter();
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+    e.preventDefault();
+    setLoading(true);
+    setError('');
 
-    try {
-      const result = await signIn('credentials', {
-        email,
-        password,
-        redirect: false,
-      })
+    const result = await signIn('credentials', {
+      email: formData.email,
+      password: formData.password,
+      redirect: false,
+    });
 
-      if (result?.error) {
-        setError('Ungültige Anmeldedaten')
-        setLoading(false)
-      } else {
-        router.push('/admin')
-        router.refresh()
-      }
-    } catch (error) {
-      setError('Ein Fehler ist aufgetreten')
-      setLoading(false)
+    if (result?.error) {
+      setError('Ungültige Anmeldedaten');
+      setLoading(false);
+    } else {
+      router.push('/admin');
     }
-  }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-bdp-blue via-bdp-blue-light to-bdp-green py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full">
-        {/* Logo/Header */}
+    <div className="min-h-[calc(100vh-8rem)] flex items-center justify-center bg-gray-50">
+      <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-lg">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">
-            BdP Abrechnungssystem
-          </h1>
-          <p className="text-white/90 text-lg">
-            Admin-Login
-          </p>
+          <h1 className="text-3xl font-bold text-bdp-primary">Admin-Login</h1>
+          <p className="text-gray-600 mt-2">Melden Sie sich an, um Abrechnungen zu verwalten</p>
         </div>
 
-        {/* Login Card */}
-        <div className="bg-white rounded-lg shadow-2xl p-8">
-          <h2 className="text-2xl font-bold text-bdp-blue mb-6 text-center">
-            Anmelden
-          </h2>
-
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-600">{error}</p>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="email" className="label">
-                E-Mail-Adresse
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="input"
-                placeholder="admin@bdp-bawue.de"
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="label">
-                Passwort
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="input"
-                placeholder="••••••••"
-                required
-                disabled={loading}
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Wird angemeldet...
-                </span>
-              ) : (
-                'Anmelden'
-              )}
-            </button>
-          </form>
-
-          <div className="mt-6 text-center text-sm text-gray-600">
-            <p>
-              Nur für autorisierte Administratoren
-            </p>
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded mb-6">
+            {error}
           </div>
-        </div>
+        )}
 
-        {/* Back Link */}
-        <div className="mt-6 text-center">
-          <a 
-            href="/abrechnung" 
-            className="text-white hover:underline text-sm"
-          >
-            ← Zurück zur Abrechnung
-          </a>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium mb-2">E-Mail</label>
+            <Input
+              type="email"
+              required
+              value={formData.email}
+              onChange={e => setFormData({ ...formData, email: e.target.value })}
+              placeholder="admin@bdp-bawue.de"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Passwort</label>
+            <Input
+              type="password"
+              required
+              value={formData.password}
+              onChange={e => setFormData({ ...formData, password: e.target.value })}
+            />
+          </div>
+
+          <Button type="submit" className="w-full" size="lg" disabled={loading}>
+            {loading ? 'Wird angemeldet...' : 'Anmelden'}
+          </Button>
+        </form>
+
+        <div className="mt-6 p-4 bg-blue-50 rounded">
+          <p className="text-sm text-gray-600">
+            <strong>Demo-Zugänge:</strong>
+          </p>
+          <p className="text-sm text-gray-600 mt-1">
+            Admin: admin@bdp-bawue.de / admin123
+          </p>
+          <p className="text-sm text-gray-600">
+            Kasse: kasse@bdp-bawue.de / admin123
+          </p>
         </div>
       </div>
     </div>
-  )
+  );
 }

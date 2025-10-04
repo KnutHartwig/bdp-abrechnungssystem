@@ -1,50 +1,51 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { generateAbrechnungsPDF } from '@/lib/pdf-generator';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { generateAbrechnungPDF } from '@/lib/pdf-generator';
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const { aktionId } = await request.json();
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: 'Nicht authentifiziert' },
+        { status: 401 }
+      );
+    }
+
+    const body = await req.json();
+    const { aktionId } = body;
 
     if (!aktionId) {
       return NextResponse.json(
-        { error: 'aktionId ist erforderlich' },
+        { success: false, error: 'Aktion-ID fehlt' },
         { status: 400 }
       );
     }
 
-    // Abrechnungen laden
-    const abrechnungen = await prisma.abrechnung.findMany({
-      where: {
-        aktionId,
-        status: { in: ['FREIGEGEBEN', 'VERSENDET'] },
-      },
-      include: {
-        aktion: true,
-      },
-    });
+    const result = await generateAbrechnungPDF(aktionId);
 
-    if (abrechnungen.length === 0) {
+    if (!result.success) {
       return NextResponse.json(
-        { error: 'Keine freigegebenen Abrechnungen gefunden' },
-        { status: 404 }
+        { success: false, error: result.error },
+        { status: 500 }
       );
     }
 
-    // PDF generieren
-    const pdfBuffer = await generateAbrechnungsPDF(abrechnungen as any);
+    // Relativen Pfad für Frontend zurückgeben
+    const relativePath = result.pdfPath?.replace(process.cwd() + '/public', '');
 
-    // PDF zurückgeben
-    return new NextResponse(pdfBuffer, {
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="Abrechnung_${abrechnungen[0].aktion.titel}.pdf"`,
+    return NextResponse.json({
+      success: true,
+      data: {
+        pdfUrl: relativePath,
+        pdfPath: result.pdfPath,
       },
     });
   } catch (error) {
-    console.error('PDF Error:', error);
+    console.error('PDF-API-Fehler:', error);
     return NextResponse.json(
-      { error: 'Fehler bei der PDF-Generierung' },
+      { success: false, error: 'Fehler bei PDF-Generierung' },
       { status: 500 }
     );
   }

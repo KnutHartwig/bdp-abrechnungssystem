@@ -1,257 +1,333 @@
 import puppeteer from 'puppeteer';
-import { format } from 'date-fns';
-import { de } from 'date-fns/locale';
+import { prisma } from './prisma';
+import { formatCurrency, formatDate } from './utils';
+import { KATEGORIE_LABELS } from '@/types';
+import path from 'path';
+import fs from 'fs/promises';
 
-// Puppeteer v23+ API
-
-interface AbrechnungData {
-  id: string;
-  name: string;
-  stamm: string;
-  email: string;
-  kategorie: string;
-  belegbeschreibung?: string;
-  belegdatum: Date;
-  betrag: number;
-  status: string;
-  aktion: {
-    titel: string;
-    startdatum: Date;
-    enddatum: Date;
-  };
+export interface PDFGenerationResult {
+  success: boolean;
+  pdfPath?: string;
+  error?: string;
 }
 
-export async function generateAbrechnungsPDF(
-  abrechnungen: AbrechnungData[]
-): Promise<Buffer> {
-  if (abrechnungen.length === 0) {
-    throw new Error('Keine Abrechnungen zum Exportieren');
-  }
-
-  const aktion = abrechnungen[0].aktion;
-
-  // Kategorien gruppieren
-  const byKategorie = abrechnungen.reduce((acc, item) => {
-    if (!acc[item.kategorie]) {
-      acc[item.kategorie] = [];
+// HTML-Template für PDF generieren
+function generateAbrechnungHTML(aktion: any, abrechnungen: any[]): string {
+  // Gruppiere Abrechnungen nach Kategorie
+  const kategorien = abrechnungen.reduce((acc, ab) => {
+    if (!acc[ab.kategorie]) {
+      acc[ab.kategorie] = [];
     }
-    acc[item.kategorie].push(item);
+    acc[ab.kategorie].push(ab);
     return acc;
-  }, {} as Record<string, AbrechnungData[]>);
+  }, {} as Record<string, any[]>);
 
-  // HTML für PDF generieren
-  const html = `
-<!DOCTYPE html>
-<html lang="de">
-<head>
-  <meta charset="UTF-8">
-  <style>
-    @page {
-      size: A4;
-      margin: 2cm;
-    }
-    body {
-      font-family: Arial, sans-serif;
-      font-size: 10pt;
-      line-height: 1.4;
-    }
-    .header {
-      text-align: center;
-      margin-bottom: 30px;
-      padding-bottom: 20px;
-      border-bottom: 3px solid #003D7A;
-    }
-    .header h1 {
-      color: #003D7A;
-      font-size: 24pt;
-      margin: 0 0 10px 0;
-    }
-    .header .subtitle {
-      color: #666;
-      font-size: 12pt;
-    }
-    .info-box {
-      background: #f5f5f5;
-      padding: 15px;
-      border-radius: 5px;
-      margin-bottom: 20px;
-    }
-    .info-box p {
-      margin: 5px 0;
-    }
-    .kategorie {
-      page-break-before: always;
-      margin-bottom: 40px;
-    }
-    .kategorie:first-of-type {
-      page-break-before: avoid;
-    }
-    .kategorie-header {
-      background: #003D7A;
-      color: white;
-      padding: 10px 15px;
-      margin: 20px 0 15px 0;
-      font-size: 14pt;
-      font-weight: bold;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 20px;
-    }
-    th {
-      background: #4A7729;
-      color: white;
-      padding: 8px;
-      text-align: left;
-      font-size: 9pt;
-    }
-    td {
-      border-bottom: 1px solid #ddd;
-      padding: 6px 8px;
-      font-size: 9pt;
-    }
-    tr:nth-child(even) {
-      background: #f9f9f9;
-    }
-    .betrag {
-      text-align: right;
-      font-weight: bold;
-    }
-    .summe {
-      background: #E87722 !important;
-      color: white;
-      font-weight: bold;
-      font-size: 11pt;
-    }
-    .gesamt-summe {
-      background: #003D7A;
-      color: white;
-      padding: 15px;
-      text-align: right;
-      font-size: 16pt;
-      margin-top: 30px;
-    }
-    .footer {
-      margin-top: 50px;
-      padding-top: 20px;
-      border-top: 1px solid #ccc;
-      text-align: center;
-      font-size: 8pt;
-      color: #666;
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>BdP Abrechnungsübersicht</h1>
-    <div class="subtitle">${aktion.titel}</div>
-  </div>
-
-  <div class="info-box">
-    <p><strong>Zeitraum:</strong> ${format(new Date(aktion.startdatum), 'dd.MM.yyyy', { locale: de })} - ${format(new Date(aktion.enddatum), 'dd.MM.yyyy', { locale: de })}</p>
-    <p><strong>Erstellt am:</strong> ${format(new Date(), 'dd.MM.yyyy HH:mm', { locale: de })} Uhr</p>
-    <p><strong>Anzahl Positionen:</strong> ${abrechnungen.length}</p>
-  </div>
-
-  ${Object.entries(byKategorie).map(([kategorie, items]) => `
-    <div class="kategorie">
-      <div class="kategorie-header">${formatKategorie(kategorie)}</div>
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 20%">Name</th>
-            <th style="width: 15%">Stamm</th>
-            <th style="width: 15%">Datum</th>
-            <th style="width: 35%">Beschreibung</th>
-            <th style="width: 15%" class="betrag">Betrag</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${items.map(item => `
+  // Berechne Gesamt- und Kategorie-Summen
+  const gesamtBetrag = abrechnungen.reduce((sum, ab) => sum + Number(ab.betrag), 0);
+  
+  const kategorieHTML = Object.entries(kategorien).map(([kategorie, items]) => {
+    const kategorieSumme = items.reduce((sum, ab) => sum + Number(ab.betrag), 0);
+    
+    const itemsHTML = items.map(ab => `
+      <tr>
+        <td>${ab.name}</td>
+        <td>${ab.stamm}</td>
+        <td>${formatDate(ab.belegdatum)}</td>
+        <td>${ab.belegbeschreibung || '-'}</td>
+        <td class="align-right">${formatCurrency(ab.betrag)}</td>
+      </tr>
+    `).join('');
+    
+    return `
+      <div class="kategorie-section">
+        <h2 class="kategorie-titel">${KATEGORIE_LABELS[kategorie as keyof typeof KATEGORIE_LABELS]}</h2>
+        <table>
+          <thead>
             <tr>
-              <td>${item.name}</td>
-              <td>${item.stamm}</td>
-              <td>${format(new Date(item.belegdatum), 'dd.MM.yyyy', { locale: de })}</td>
-              <td>${item.belegbeschreibung || '-'}</td>
-              <td class="betrag">${formatBetrag(Number(item.betrag))} €</td>
+              <th>Name</th>
+              <th>Stamm</th>
+              <th>Datum</th>
+              <th>Beschreibung</th>
+              <th class="align-right">Betrag</th>
             </tr>
-          `).join('')}
-          <tr class="summe">
-            <td colspan="4" style="text-align: right; padding-right: 10px;">
-              <strong>Summe ${formatKategorie(kategorie)}:</strong>
-            </td>
-            <td class="betrag">
-              ${formatBetrag(items.reduce((sum, item) => sum + Number(item.betrag), 0))} €
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  `).join('')}
+          </thead>
+          <tbody>
+            ${itemsHTML}
+            <tr class="summe-row">
+              <td colspan="4"><strong>Summe ${KATEGORIE_LABELS[kategorie as keyof typeof KATEGORIE_LABELS]}</strong></td>
+              <td class="align-right"><strong>${formatCurrency(kategorieSumme)}</strong></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    `;
+  }).join('');
 
-  <div class="gesamt-summe">
-    <strong>Gesamtsumme:</strong> ${formatBetrag(abrechnungen.reduce((sum, item) => sum + Number(item.betrag), 0))} €
-  </div>
-
-  <div class="footer">
-    <p>BdP Landesverband Baden-Württemberg e.V.</p>
-    <p>Automatisch generiert durch das Abrechnungssystem v1.1.0</p>
-  </div>
-</body>
-</html>
+  return `
+    <!DOCTYPE html>
+    <html lang="de">
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Abrechnung ${aktion.titel}</title>
+      <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+          font-family: 'Arial', sans-serif;
+          font-size: 11pt;
+          line-height: 1.4;
+          color: #333;
+        }
+        
+        .header {
+          background-color: #003C71;
+          color: white;
+          padding: 30px;
+          margin-bottom: 30px;
+        }
+        
+        .header h1 {
+          font-size: 28pt;
+          margin-bottom: 10px;
+        }
+        
+        .header .meta {
+          font-size: 12pt;
+          opacity: 0.9;
+        }
+        
+        .deckblatt {
+          page-break-after: always;
+          padding: 30px;
+        }
+        
+        .deckblatt-info {
+          margin: 40px 0;
+        }
+        
+        .deckblatt-info table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        
+        .deckblatt-info td {
+          padding: 12px;
+          border-bottom: 1px solid #ddd;
+        }
+        
+        .deckblatt-info td:first-child {
+          font-weight: bold;
+          width: 200px;
+        }
+        
+        .gesamtsumme {
+          background-color: #003C71;
+          color: white;
+          padding: 30px;
+          margin: 40px 0;
+          text-align: center;
+        }
+        
+        .gesamtsumme .betrag {
+          font-size: 36pt;
+          font-weight: bold;
+          margin: 10px 0;
+        }
+        
+        .kategorie-section {
+          page-break-inside: avoid;
+          margin-bottom: 40px;
+        }
+        
+        .kategorie-titel {
+          background-color: #003C71;
+          color: white;
+          padding: 15px;
+          margin-bottom: 15px;
+          font-size: 16pt;
+        }
+        
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 20px;
+        }
+        
+        th {
+          background-color: #f4f4f4;
+          padding: 12px;
+          text-align: left;
+          border-bottom: 2px solid #003C71;
+          font-weight: bold;
+        }
+        
+        td {
+          padding: 10px 12px;
+          border-bottom: 1px solid #ddd;
+        }
+        
+        .align-right {
+          text-align: right;
+        }
+        
+        .summe-row {
+          background-color: #f9f9f9;
+          border-top: 2px solid #003C71;
+        }
+        
+        .footer {
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          padding: 20px 30px;
+          border-top: 1px solid #ddd;
+          background: white;
+          font-size: 9pt;
+          color: #666;
+        }
+        
+        @media print {
+          .footer { position: fixed; }
+        }
+      </style>
+    </head>
+    <body>
+      <!-- Deckblatt -->
+      <div class="deckblatt">
+        <div class="header">
+          <h1>Abrechnung</h1>
+          <div class="meta">BdP Landesverband Baden-Württemberg e.V.</div>
+        </div>
+        
+        <div class="deckblatt-info">
+          <table>
+            <tr>
+              <td>Aktion:</td>
+              <td>${aktion.titel}</td>
+            </tr>
+            <tr>
+              <td>Zeitraum:</td>
+              <td>${formatDate(aktion.startdatum)} - ${formatDate(aktion.enddatum)}</td>
+            </tr>
+            <tr>
+              <td>Erstellt am:</td>
+              <td>${formatDate(new Date())}</td>
+            </tr>
+            <tr>
+              <td>Anzahl Positionen:</td>
+              <td>${abrechnungen.length}</td>
+            </tr>
+          </table>
+        </div>
+        
+        <div class="gesamtsumme">
+          <div>Gesamtsumme</div>
+          <div class="betrag">${formatCurrency(gesamtBetrag)}</div>
+        </div>
+      </div>
+      
+      <!-- Kategorien -->
+      ${kategorieHTML}
+      
+      <div class="footer">
+        <div>Erstellt mit BdP Abrechnungssystem | ${new Date().toLocaleString('de-DE')}</div>
+      </div>
+    </body>
+    </html>
   `;
+}
 
-  // Puppeteer v23 neue API
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-      '--disable-gpu',
-    ],
-  });
-
+// PDF generieren
+export async function generateAbrechnungPDF(aktionId: string): Promise<PDFGenerationResult> {
+  let browser;
+  
   try {
+    // Hole Aktion und Abrechnungen aus der DB
+    const aktion = await prisma.aktion.findUnique({
+      where: { id: aktionId },
+      include: {
+        abrechnungen: {
+          where: {
+            status: {
+              in: ['EINGEREICHT', 'GEPRUEFT', 'FREIGEGEBEN', 'VERSENDET'],
+            },
+          },
+          orderBy: [
+            { kategorie: 'asc' },
+            { name: 'asc' },
+          ],
+        },
+      },
+    });
+
+    if (!aktion) {
+      return { success: false, error: 'Aktion nicht gefunden' };
+    }
+
+    if (aktion.abrechnungen.length === 0) {
+      return { success: false, error: 'Keine Abrechnungen zum Exportieren vorhanden' };
+    }
+
+    // HTML generieren
+    const html = generateAbrechnungHTML(aktion, aktion.abrechnungen);
+
+    // Puppeteer Browser starten
+    browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
+
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: 'networkidle0' });
 
-    const pdfBuffer = await page.pdf({
+    // PDF-Pfad
+    const pdfDir = path.join(process.cwd(), 'public', 'pdfs');
+    await fs.mkdir(pdfDir, { recursive: true });
+    
+    const filename = `Abrechnung_${aktion.titel.replace(/\s+/g, '_')}_${Date.now()}.pdf`;
+    const pdfPath = path.join(pdfDir, filename);
+
+    // PDF erstellen
+    await page.pdf({
+      path: pdfPath,
       format: 'A4',
       printBackground: true,
       margin: {
         top: '20mm',
-        right: '20mm',
-        bottom: '20mm',
-        left: '20mm',
+        right: '15mm',
+        bottom: '25mm',
+        left: '15mm',
       },
     });
 
-    return Buffer.from(pdfBuffer);
-  } finally {
     await browser.close();
+
+    return {
+      success: true,
+      pdfPath,
+    };
+  } catch (error) {
+    if (browser) {
+      await browser.close();
+    }
+    
+    console.error('PDF-Generierung fehlgeschlagen:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unbekannter Fehler bei PDF-Generierung',
+    };
   }
 }
 
-// Hilfsfunktionen
-function formatKategorie(kategorie: string): string {
-  const mapping: Record<string, string> = {
-    TEILNAHMEBEITRAEGE: 'Teilnahmebeiträge',
-    FAHRTKOSTEN: 'Fahrtkosten',
-    UNTERKUNFT: 'Unterkunft',
-    VERPFLEGUNG: 'Verpflegung',
-    MATERIAL: 'Material',
-    PORTO: 'Porto',
-    TELEKOMMUNIKATION: 'Telekommunikation',
-    SONSTIGE_AUSGABEN: 'Sonstige Ausgaben',
-    HONORARE: 'Honorare',
-    VERSICHERUNGEN: 'Versicherungen',
-    MIETE: 'Miete',
-  };
-  return mapping[kategorie] || kategorie;
-}
-
-function formatBetrag(betrag: number): string {
-  return betrag.toFixed(2).replace('.', ',');
+// PDF für einzelne Kategorie generieren (für Detailansichten)
+export async function generateKategoriePDF(
+  aktionId: string,
+  kategorie: string
+): Promise<PDFGenerationResult> {
+  // Ähnliche Implementierung wie generateAbrechnungPDF,
+  // aber nur für eine Kategorie
+  // ... (kann bei Bedarf erweitert werden)
+  return { success: false, error: 'Noch nicht implementiert' };
 }

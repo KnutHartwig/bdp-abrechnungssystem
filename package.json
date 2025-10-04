@@ -1,11 +1,11 @@
 {
   "name": "bdp-abrechnungssystem",
-  "version": "1.1.4",
-  "description": "BdP Landesverband Baden-Württemberg Abrechnungssystem",
+  "version": "2.0.0",
+  "description": "BdP Landesverband Baden-Württemberg Abrechnungssystem - Next.js 15",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbopack",
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint .",
@@ -13,7 +13,8 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@prisma/client": "^6.16.3",
@@ -24,36 +25,39 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@radix-ui/react-toast": "^1.2.15",
     "bcryptjs": "^2.4.3",
-    "class-variance-authority": "^0.7.0",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "date-fns": "^3.6.0",
-    "lucide-react": "^0.544.0",
-    "next": "14.2.5",
-    "next-auth": "^4.24.7",
-    "nodemailer": "^6.9.14",
+    "date-fns": "^4.1.0",
+    "lucide-react": "^0.454.0",
+    "next": "15.0.3",
+    "next-auth": "^4.24.11",
+    "nodemailer": "^6.9.16",
     "puppeteer": "^24.23.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "tailwind-merge": "^2.5.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@eslint/js": "^9.16.0",
     "@types/bcryptjs": "^2.4.6",
-    "@types/node": "^22.18.8",
-    "@types/nodemailer": "^6.4.15",
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
+    "@types/eslint__js": "^8.42.3",
+    "@types/node": "^22.10.1",
+    "@types/nodemailer": "^6.4.16",
+    "@types/react": "^19.0.1",
+    "@types/react-dom": "^19.0.2",
     "autoprefixer": "^10.4.20",
-    "eslint": "^8.57.0",
-    "eslint-config-next": "14.2.5",
-    "postcss": "^8.4.41",
+    "eslint": "^9.16.0",
+    "eslint-config-next": "15.0.3",
+    "postcss": "^8.4.49",
     "prisma": "^6.16.3",
-    "tailwindcss": "^3.4.10",
-    "tsx": "^4.17.0",
-    "typescript": "^5.5.4"
+    "tailwindcss": "^3.4.15",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.17.0"
   },
   "engines": {
-    "node": "22.x"
+    "node": ">=22.0.0"
   }
 }

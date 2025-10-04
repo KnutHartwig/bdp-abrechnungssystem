@@ -1,5 +1,5 @@
 // Prisma Schema für BdP Abrechnungssystem
-// Version: 6.0+ (ESM-kompatibel)
+// Version: 2.0 - Next.js 15 Edition
 
 generator client {
   provider = "prisma-client-js"
@@ -33,6 +33,7 @@ enum UserRole {
 model Aktion {
   id           String        @id @default(cuid())
   titel        String
+  beschreibung String?       // NEU: Optionale Beschreibung der Aktion
   startdatum   DateTime
   enddatum     DateTime
   status       AktionStatus  @default(AKTIV)
@@ -72,8 +73,9 @@ model Abrechnung {
   belegUrl          String?
   
   // Fahrtkosten-spezifische Felder (optional)
-  kilometerstand    Int?
+  kilometer         Int?      // GEÄNDERT: von kilometerstand zu kilometer
   fahrzeugtyp       Fahrzeugtyp?
+  kmSatz            Decimal?  @db.Decimal(4, 2) // NEU: Kilometer-Satz (z.B. 0.30, 0.40, 0.50)
   mitfahrer         Int?      @default(0)
   zuschlagLagerleitung Boolean @default(false)
   zuschlagMaterial  Boolean   @default(false)
