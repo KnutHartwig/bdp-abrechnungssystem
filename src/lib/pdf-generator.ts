@@ -26,9 +26,9 @@ function generateAbrechnungHTML(aktion: any, abrechnungen: any[]): string {
   const gesamtBetrag = abrechnungen.reduce((sum, ab) => sum + Number(ab.betrag), 0);
   
   const kategorieHTML = Object.entries(kategorien).map(([kategorie, items]) => {
-    const kategorieSumme = items.reduce((sum, ab) => sum + Number(ab.betrag), 0);
+    const kategorieSumme = (items as any[]).reduce((sum, ab) => sum + Number(ab.betrag), 0);
     
-    const itemsHTML = items.map(ab => `
+    const itemsHTML = (items as any[]).map(ab => `
       <tr>
         <td>${ab.name}</td>
         <td>${ab.stamm}</td>
