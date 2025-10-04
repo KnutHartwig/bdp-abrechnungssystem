@@ -139,6 +139,11 @@ export default function AdminPage() {
     }
   };
 
+  // Guard gegen Static Generation
+  if (typeof window === 'undefined') {
+    return <div className="container mx-auto px-4 py-8">Lädt...</div>;
+  }
+
   if (status === 'loading') {
     return <div className="container mx-auto px-4 py-8">Lädt...</div>;
   }
