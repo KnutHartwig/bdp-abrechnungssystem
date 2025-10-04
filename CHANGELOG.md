@@ -2,6 +2,20 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [1.1.1] - 2025-10-04
+
+### 🔧 Behoben
+- **ESLint Dependency-Konflikt** - Downgrade von v9 → v8.57.0
+- **Vercel Build-Error** - eslint-config-next benötigt ESLint v8
+- **@eslint/eslintrc entfernt** - Nicht mehr benötigt mit Legacy Config
+
+### 📝 Änderungen
+- ESLint v8.57.0 (stabil für Next.js 14)
+- Klassische `.eslintrc.json` statt Flat Config
+- Alle Builds funktionieren nun
+
+---
+
 ## [1.1.0] - 2025-10-04
 
 ### ✅ Behoben

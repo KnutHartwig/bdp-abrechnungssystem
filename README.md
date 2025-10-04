@@ -221,4 +221,4 @@ Bei Fragen: **kasse@bdp-bawue.de**
 
 ---
 
-**Version 1.1.0** - Produktionsbereit | Oktober 2025
+**Version 1.1.1** - Produktionsbereit | Oktober 2025
