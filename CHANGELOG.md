@@ -2,6 +2,22 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [1.1.4] - 2025-10-04
+
+### 🔧 Vercel Node.js Version Fix
+
+- ✅ Node.js Engine: `18.x` → `22.x` (Vercel Anforderung)
+- ✅ @types/node: 22.2.0 → 22.18.8 (Kompatibilität)
+- ✅ Prisma: 6.0.0 → 6.16.3 (Neueste Version)
+
+**Grund:** Vercel unterstützt Node.js 18.x nicht mehr:
+```
+Error: Node.js Version "18.x" is discontinued and must be upgraded.
+Please set "engines": { "node": "22.x" }
+```
+
+---
+
 ## [1.1.3] - 2025-10-04
 
 ### 🔴 KRITISCHE FIXES - Build-Fehler vollständig behoben
