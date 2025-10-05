@@ -7,11 +7,11 @@ export default function HomePage() {
     <div className="container mx-auto px-4 flex items-center justify-center min-h-[calc(100vh-12rem)]">
       <div className="text-center max-w-2xl">
         <h1 className="text-6xl font-bold mb-6 text-bdp-primary">
-          BdP Abrechnungssystem
+          Matilde
         </h1>
         
         <p className="text-xl text-gray-600 mb-12">
-          Erfasse deine Abrechnungen schnell und einfach für Maßnahmen des BdP Landesverbands Baden-Württemberg
+          Erfasse deine Abrechnungen schnell und einfach für Maßnahmen des BdP Landesverbands Baden-Württemberg e.V.
         </p>
         
         <Link href="/abrechnung">

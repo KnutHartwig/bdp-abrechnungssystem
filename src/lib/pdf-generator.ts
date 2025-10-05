@@ -234,7 +234,7 @@ function generateAbrechnungHTML(aktion: any, abrechnungen: any[]): string {
       ${kategorieHTML}
       
       <div class="footer">
-        <div>Erstellt mit BdP Abrechnungssystem | ${new Date().toLocaleString('de-DE')}</div>
+        <div>Erstellt mit Matilde - BdP Landesverband Baden-Württemberg e.V. | ${new Date().toLocaleString('de-DE')}</div>
       </div>
     </body>
     </html>

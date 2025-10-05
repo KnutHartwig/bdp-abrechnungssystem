@@ -57,7 +57,7 @@ export async function sendeAbrechnungAnLandeskasse(
     </head>
     <body>
       <div class="header">
-        <h1>BdP Abrechnungssystem</h1>
+        <h1>Matilde - BdP Landesverband Baden-Württemberg e.V.</h1>
       </div>
       <div class="content">
         <h2>Neue Abrechnung: ${aktionTitel}</h2>
@@ -84,7 +84,7 @@ export async function sendeAbrechnungAnLandeskasse(
         </ol>
       </div>
       <div class="footer">
-        <p>Diese E-Mail wurde automatisch vom BdP Abrechnungssystem generiert.</p>
+        <p>Diese E-Mail wurde automatisch von Matilde generiert.</p>
         <p>BdP Landesverband Baden-Württemberg e.V.</p>
       </div>
     </body>
@@ -125,7 +125,7 @@ export async function sendeBestaetigung(
     </head>
     <body>
       <div class="header">
-        <h1>BdP Abrechnungssystem</h1>
+        <h1>Matilde - BdP Landesverband Baden-Württemberg e.V.</h1>
       </div>
       <div class="content">
         <h2>Abrechnung eingegangen</h2>
@@ -149,7 +149,7 @@ export async function sendeBestaetigung(
         <p>Vielen Dank!</p>
       </div>
       <div class="footer">
-        <p>Diese E-Mail wurde automatisch vom BdP Abrechnungssystem generiert.</p>
+        <p>Diese E-Mail wurde automatisch von Matilde generiert.</p>
         <p>BdP Landesverband Baden-Württemberg e.V.</p>
       </div>
     </body>

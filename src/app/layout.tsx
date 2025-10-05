@@ -7,8 +7,8 @@ import SessionProvider from '@/components/SessionProvider';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'BdP Abrechnungssystem',
-  description: 'Automatisiertes Abrechnungssystem für den BdP Landesverband Baden-Württemberg',
+  title: 'Matilde - BdP Landesverband Baden-Württemberg e.V.',
+  description: 'Automatisiertes Abrechnungssystem Matilde für den BdP Landesverband Baden-Württemberg e.V.',
 };
 
 export default function RootLayout({
@@ -24,7 +24,7 @@ export default function RootLayout({
             <div className="container mx-auto px-4">
               <div className="flex items-center justify-between h-16">
                 <Link href="/" className="font-bold text-xl">
-                  BdP Abrechnungssystem
+                  Matilde
                 </Link>
                 <div className="flex gap-4">
                   <Link href="/abrechnung" className="hover:text-bdp-accent transition">

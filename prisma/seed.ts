@@ -16,7 +16,7 @@ async function main() {
   const adminUser = await prisma.user.create({
     data: {
       email: 'admin@bdp-bawue.de',
-      name: 'Admin BdP',
+      name: 'Admin BdP Landesverband Baden-Württemberg e.V.',
       password: hashedPassword,
       role: 'ADMIN',
     },
@@ -206,7 +206,7 @@ async function main() {
     },
   });
 
-  // Versicherung
+  // Vorschuss
   await prisma.abrechnung.create({
     data: {
       name: 'Frank Meyer',
@@ -214,15 +214,15 @@ async function main() {
       email: 'frank@example.com',
       iban: 'DE89370400440532013008',
       aktionId: sommerlager2025.id,
-      kategorie: Kategorie.VERSICHERUNG,
-      belegbeschreibung: 'Zusatzversicherung für Wassersportaktivitäten',
+      kategorie: Kategorie.VORSCHUSS,
+      belegbeschreibung: 'Vorschuss für Materialbeschaffung',
       belegdatum: new Date('2025-07-28'),
       betrag: 125.00,
       status: AbrechnungStatus.GEPRUEFT,
     },
   });
 
-  // Honorare
+  // Sonstige Einnahmen
   await prisma.abrechnung.create({
     data: {
       name: 'Laura Fischer',
@@ -230,15 +230,15 @@ async function main() {
       email: 'laura@example.com',
       iban: 'DE89370400440532013009',
       aktionId: jahresschulung.id,
-      kategorie: Kategorie.HONORARE,
-      belegbeschreibung: 'Referent*innen-Honorar Erste-Hilfe-Kurs',
+      kategorie: Kategorie.SONSTIGE_EINNAHMEN,
+      belegbeschreibung: 'Spende für Schulungsmaterial',
       belegdatum: new Date('2024-11-02'),
       betrag: 350.00,
       status: AbrechnungStatus.VERSENDET,
     },
   });
 
-  // Öffentlichkeitsarbeit
+  // Offene Verbindlichkeiten
   await prisma.abrechnung.create({
     data: {
       name: 'Tim Becker',
@@ -246,8 +246,8 @@ async function main() {
       email: 'tim@example.com',
       iban: 'DE89370400440532013010',
       aktionId: sommerlager2025.id,
-      kategorie: Kategorie.OFFENTLICHKEITSARBEIT,
-      belegbeschreibung: 'Druck von Flyern und Plakaten',
+      kategorie: Kategorie.OFFENE_VERBINDLICHKEITEN,
+      belegbeschreibung: 'Offene Rechnung Druckerei',
       belegdatum: new Date('2025-07-15'),
       betrag: 89.90,
       status: AbrechnungStatus.ENTWURF,

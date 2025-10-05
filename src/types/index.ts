@@ -93,16 +93,16 @@ export interface FahrtkostenBerechnung {
 // Kategorien-Mapping für Display
 export const KATEGORIE_LABELS: Record<Kategorie, string> = {
   TEILNAHMEBEITRAEGE: 'Teilnahmebeiträge',
+  SONSTIGE_EINNAHMEN: 'Sonstige Einnahmen',
+  VORSCHUSS: 'Vorschuss',
   FAHRTKOSTEN: 'Fahrtkosten',
   UNTERKUNFT: 'Unterkunft',
   VERPFLEGUNG: 'Verpflegung',
   MATERIAL: 'Material',
   PORTO: 'Porto',
   TELEKOMMUNIKATION: 'Telekommunikation',
-  VERSICHERUNG: 'Versicherung',
-  HONORARE: 'Honorare',
-  OFFENTLICHKEITSARBEIT: 'Öffentlichkeitsarbeit',
   SONSTIGE_AUSGABEN: 'Sonstige Ausgaben',
+  OFFENE_VERBINDLICHKEITEN: 'Offene Verbindlichkeiten',
 };
 
 // Fahrzeugtyp-Sätze

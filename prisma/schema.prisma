@@ -1,4 +1,4 @@
-// Prisma Schema für BdP Abrechnungssystem
+// Prisma Schema für Matilde - BdP Landesverband Baden-Württemberg e.V.
 // Version: 2.0 - Next.js 15 Edition
 
 generator client {
@@ -92,19 +92,19 @@ model Abrechnung {
   @@map("abrechnungen")
 }
 
-// 11 Kategorien aus Excel-Vorlage
+// 11 Kategorien basierend auf Excel-Vorlage
 enum Kategorie {
   TEILNAHMEBEITRAEGE
+  SONSTIGE_EINNAHMEN
+  VORSCHUSS
   FAHRTKOSTEN
   UNTERKUNFT
   VERPFLEGUNG
   MATERIAL
   PORTO
   TELEKOMMUNIKATION
-  VERSICHERUNG
-  HONORARE
-  OFFENTLICHKEITSARBEIT
   SONSTIGE_AUSGABEN
+  OFFENE_VERBINDLICHKEITEN
 }
 
 enum Fahrzeugtyp {

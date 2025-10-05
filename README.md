@@ -1,4 +1,6 @@
-# BdP Abrechnungssystem v2.0
+# Matilde v2.0
+
+**Abrechnungssystem für BdP Landesverband Baden-Württemberg e.V.**
 
 ## Installation
 
@@ -37,7 +39,7 @@ SMTP_HOST="smtp.gmail.com"
 SMTP_PORT="587"
 SMTP_USER="deine-email@gmail.com"
 SMTP_PASSWORD="dein-app-passwort"
-SMTP_FROM="BdP <noreply@bdp-bawue.de>"
+SMTP_FROM="Matilde - BdP Landesverband Baden-Württemberg e.V. <noreply@bdp-bawue.de>"
 LANDESKASSE_EMAIL="kasse@bdp-bawue.de"
 ```
 
