@@ -52,6 +52,7 @@ export async function POST(req: NextRequest) {
       name,
       stamm,
       email,
+      iban,
       aktionId,
       kategorie,
       belegbeschreibung,
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
     } = body;
 
     // Validierungen
-    if (!name || !stamm || !email || !aktionId || !kategorie || !belegdatum) {
+    if (!name || !stamm || !email || !iban || !aktionId || !kategorie || !belegdatum) {
       return NextResponse.json(
         { success: false, error: 'Pflichtfelder fehlen' },
         { status: 400 }
@@ -126,6 +127,7 @@ export async function POST(req: NextRequest) {
         name,
         stamm,
         email,
+        iban,
         aktionId,
         kategorie,
         belegbeschreibung,

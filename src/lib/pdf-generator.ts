@@ -32,6 +32,7 @@ function generateAbrechnungHTML(aktion: any, abrechnungen: any[]): string {
       <tr>
         <td>${ab.name}</td>
         <td>${ab.stamm}</td>
+        <td>${ab.iban}</td>
         <td>${formatDate(ab.belegdatum)}</td>
         <td>${ab.belegbeschreibung || '-'}</td>
         <td class="align-right">${formatCurrency(ab.betrag)}</td>
@@ -46,6 +47,7 @@ function generateAbrechnungHTML(aktion: any, abrechnungen: any[]): string {
             <tr>
               <th>Name</th>
               <th>Stamm</th>
+              <th>IBAN</th>
               <th>Datum</th>
               <th>Beschreibung</th>
               <th class="align-right">Betrag</th>
@@ -54,7 +56,7 @@ function generateAbrechnungHTML(aktion: any, abrechnungen: any[]): string {
           <tbody>
             ${itemsHTML}
             <tr class="summe-row">
-              <td colspan="4"><strong>Summe ${KATEGORIE_LABELS[kategorie as keyof typeof KATEGORIE_LABELS]}</strong></td>
+              <td colspan="5"><strong>Summe ${KATEGORIE_LABELS[kategorie as keyof typeof KATEGORIE_LABELS]}</strong></td>
               <td class="align-right"><strong>${formatCurrency(kategorieSumme)}</strong></td>
             </tr>
           </tbody>
