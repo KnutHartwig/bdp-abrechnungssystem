@@ -215,6 +215,8 @@ export default function AdminPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-4 py-3 text-left text-sm font-medium">Name</th>
+                <th className="px-4 py-3 text-left text-sm font-medium">Stamm</th>
+                <th className="px-4 py-3 text-left text-sm font-medium">IBAN</th>
                 <th className="px-4 py-3 text-left text-sm font-medium">Aktion</th>
                 <th className="px-4 py-3 text-left text-sm font-medium">Kategorie</th>
                 <th className="px-4 py-3 text-right text-sm font-medium">Betrag</th>
@@ -228,8 +230,10 @@ export default function AdminPage() {
                 <tr key={ab.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3">
                     <div className="font-medium">{ab.name}</div>
-                    <div className="text-sm text-gray-500">{ab.stamm}</div>
+                    <div className="text-sm text-gray-500">{ab.email}</div>
                   </td>
+                  <td className="px-4 py-3 text-sm">{ab.stamm}</td>
+                  <td className="px-4 py-3 text-sm font-mono text-xs">{ab.iban}</td>
                   <td className="px-4 py-3 text-sm">{ab.aktion.titel}</td>
                   <td className="px-4 py-3 text-sm">
                     {KATEGORIE_LABELS[ab.kategorie as keyof typeof KATEGORIE_LABELS]}

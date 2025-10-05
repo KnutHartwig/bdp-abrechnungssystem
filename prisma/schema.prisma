@@ -58,6 +58,7 @@ model Abrechnung {
   name              String
   stamm             String
   email             String
+  iban              String    // IBAN für Rückerstattungen
   
   // Aktion-Referenz
   aktionId          String
