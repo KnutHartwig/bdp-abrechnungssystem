@@ -19,10 +19,10 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (session.status === 'unauthenticated') {
+    if (session?.status === 'unauthenticated') {
       router.push('/admin/login');
     }
-  }, [session.status, router]);
+  }, [session?.status, router]);
 
   useEffect(() => {
     // Lade Aktionen
@@ -142,11 +142,11 @@ export default function AdminPage() {
     }
   };
 
-  if (session.status === 'loading') {
+  if (session?.status === 'loading') {
     return <div className="container mx-auto px-4 py-8">Lädt...</div>;
   }
 
-  if (!session.data) {
+  if (!session?.data) {
     return null;
   }
 
