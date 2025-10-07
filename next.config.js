@@ -1,54 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // React Compiler deaktiviert (benötigt babel-plugin-react-compiler)
-  // experimental: {
-  //   reactCompiler: true,
-  // },
-  
-  // Turbopack für schnelleres Dev
-  // (wird automatisch mit --turbopack flag verwendet)
-  
-  // Output-Optionen
-  output: 'standalone',
-  
-  // Image-Optimierung
   images: {
-    remotePatterns: [],
-    formats: ['image/avif', 'image/webp'],
-  },
-  
-  // Sicherheits-Header
-  async headers() {
-    return [
+    domains: ['localhost'],
+    remotePatterns: [
       {
-        source: '/:path*',
-        headers: [
-          {
-            key: 'X-DNS-Prefetch-Control',
-            value: 'on'
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'SAMEORIGIN'
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff'
-          },
-        ],
+        protocol: 'https',
+        hostname: '**.vercel.app',
       },
-    ];
+    ],
   },
-  
-  // Webpack-Konfiguration für Puppeteer
-  webpack: (config, { isServer }) => {
-    if (isServer) {
-      config.externals.push({
-        puppeteer: 'puppeteer',
-      });
-    }
-    return config;
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '10mb',
+    },
   },
+  // Vercel-specific optimizations
+  output: 'standalone',
 };
 
-export default nextConfig;
+module.exports = nextConfig;
