@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,18 @@ export default function AdminLoginPage() {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Automatische Datenbank-Initialisierung beim ersten Laden
+  useEffect(() => {
+    const initDatabase = async () => {
+      try {
+        await fetch('/api/init');
+      } catch (err) {
+        console.error('Init-Fehler:', err);
+      }
+    };
+    initDatabase();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
