@@ -1,67 +1,85 @@
-# Matilde v2.0
+# Matilde v2.0 - OHNE LOGIN
 
-**Abrechnungssystem für BdP Landesverband Baden-Württemberg e.V.**
+Abrechnungssystem für BdP Landesverband Baden-Württemberg e.V.
 
-## 🚀 Deployment auf Vercel
+**Diese Version hat KEIN Login - direkter Zugriff auf Admin-Bereich!**
 
-1. **GitHub:** Push den Code zu GitHub
-2. **Vercel:** Verbinde das Repo mit Vercel
-3. **Environment Variables:** Konfiguriere in Vercel:
-   - `DATABASE_URL` - PostgreSQL-Verbindung (Vercel Postgres)
-   - `NEXTAUTH_URL` - Deine App-URL (z.B. https://deine-app.vercel.app)
-   - `NEXTAUTH_SECRET` - Generiere mit: `openssl rand -base64 32`
-   - Optional: SMTP-Variablen für E-Mail-Versand
-4. **Deploy:** Vercel deployed automatisch
-5. **Login:** Gehe zu `/admin/login` - Admin-Accounts werden automatisch erstellt!
+## 🚀 Deployment auf Vercel (2 Minuten)
 
-### Login-Daten (nach erstem Deployment)
-- **Admin:** admin@bdp-bawue.de / admin123
-- **Kasse:** kasse@bdp-bawue.de / admin123
+### Voraussetzungen
+- Du hast bereits eine **Neon Datenbank** erstellt
+- Du hast die **DATABASE_URL** von Neon
 
-⚠️ **Wichtig:** Ändere die Passwörter nach dem ersten Login!
+### Schritt 1: Code zu GitHub
+```bash
+git init
+git add .
+git commit -m "Initial commit"
+git remote add origin https://github.com/DEIN-USERNAME/DEIN-REPO.git
+git push -u origin main
+```
 
-## Lokale Entwicklung
+### Schritt 2: Vercel-Projekt erstellen
+1. Gehe zu [vercel.com](https://vercel.com)
+2. Klicke "Add New Project"
+3. Wähle dein GitHub-Repository
+4. Klicke "Import"
+
+### Schritt 3: Environment Variable hinzufügen
+Füge diese eine Variable hinzu (Settings → Environment Variables):
+
+```
+DATABASE_URL=<deine-neon-database-url>
+```
+
+**Beispiel Neon URL:**
+```
+postgresql://user:password@ep-xyz.eu-central-1.aws.neon.tech/neondb?sslmode=require
+```
+
+### Schritt 4: Deploy
+Klicke "Deploy" - fertig!
+
+Die Datenbank wird automatisch beim Build eingerichtet.
+
+## 📱 Deine App
+
+Nach dem Deployment:
+
+- **Startseite:** `https://deine-app.vercel.app`
+- **Abrechnung erstellen:** `https://deine-app.vercel.app/abrechnung`
+- **Admin-Bereich:** `https://deine-app.vercel.app/admin` ← **KEIN LOGIN NÖTIG!**
+
+## ⚠️ Wichtig
+
+**Diese Version hat KEINEN Login!** Jeder kann auf den Admin-Bereich zugreifen.
+Das ist nur zum Testen gedacht!
+
+## 💻 Lokale Entwicklung
 
 ```bash
 npm install
 cp .env.example .env.local
-# .env.local mit deinen Daten bearbeiten
+# Füge deine DATABASE_URL in .env.local ein
 
-# Datenbank
-npm run db:generate
 npm run db:push
 npm run db:seed
-
-# Starten
 npm run dev
 ```
 
-## Umgebungsvariablen (.env.local)
+## 🔧 Was wurde entfernt?
 
-```env
-DATABASE_URL="postgresql://user:password@localhost:5432/bdp_abrechnungen"
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="<generiere mit: openssl rand -base64 32>"
-SMTP_HOST="smtp.gmail.com"
-SMTP_PORT="587"
-SMTP_USER="deine-email@gmail.com"
-SMTP_PASSWORD="dein-app-passwort"
-SMTP_FROM="Matilde - BdP Landesverband Baden-Württemberg e.V. <noreply@bdp-bawue.de>"
-LANDESKASSE_EMAIL="kasse@bdp-bawue.de"
-```
+- ❌ NextAuth
+- ❌ Login-Seite
+- ❌ Passwörter
+- ❌ User-Management
+- ✅ Direkter Zugriff auf Admin-Bereich
 
-## Technologie
+## 📝 Technologie
 
 - Next.js 15
 - React 19
 - PostgreSQL + Prisma
-- NextAuth.js
 - Tailwind CSS
-- Puppeteer (PDF)
 
-## Wichtige Änderungen von v1.x
-
-- `kilometerstand` → `kilometer`
-- Neues Feld `kmSatz` bei Abrechnung
-- Neues Feld `beschreibung` bei Aktion
-- ESLint 9 Flat Config
+Viel Erfolg! 🚀

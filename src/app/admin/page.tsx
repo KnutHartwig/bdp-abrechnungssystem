@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { KATEGORIE_LABELS, STATUS_LABELS } from '@/types';
@@ -11,18 +9,10 @@ import { KATEGORIE_LABELS, STATUS_LABELS } from '@/types';
 export const dynamic = 'force-dynamic';
 
 export default function AdminPage() {
-  const session = useSession();
-  const router = useRouter();
   const [abrechnungen, setAbrechnungen] = useState<any[]>([]);
   const [aktionen, setAktionen] = useState<any[]>([]);
   const [selectedAktion, setSelectedAktion] = useState<string>('');
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (session?.status === 'unauthenticated') {
-      router.push('/admin/login');
-    }
-  }, [session?.status, router]);
 
   useEffect(() => {
     // Lade Aktionen
@@ -142,25 +132,11 @@ export default function AdminPage() {
     }
   };
 
-  if (session?.status === 'loading') {
-    return <div className="container mx-auto px-4 py-8">Lädt...</div>;
-  }
-
-  if (!session?.data) {
-    return null;
-  }
-
   const gesamtBetrag = abrechnungen.reduce((sum, ab) => sum + Number(ab.betrag), 0);
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Admin-Dashboard</h1>
-        <div className="text-right">
-          <p className="text-sm text-gray-600">Angemeldet als</p>
-          <p className="font-medium">{session.data.user.email}</p>
-        </div>
-      </div>
+      <h1 className="text-3xl font-bold mb-6">Admin-Dashboard</h1>
 
       {/* Filter und Aktionen */}
       <div className="bg-white p-6 rounded-lg border mb-6">
