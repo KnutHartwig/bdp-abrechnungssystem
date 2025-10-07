@@ -31,6 +31,9 @@ export default function RootLayout({
                 <Link href="/admin" className="hover:text-bdp-accent transition">
                   Admin
                 </Link>
+                <Link href="/admin/aktionen" className="hover:text-bdp-accent transition">
+                  Aktionen
+                </Link>
               </div>
             </div>
           </div>
