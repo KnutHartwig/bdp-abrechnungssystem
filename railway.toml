@@ -1,0 +1,19 @@
+# Railway Configuration für BdP Abrechnungssystem
+
+[build]
+builder = "nixpacks"
+buildCommand = "npm install && npm run build"
+
+[deploy]
+startCommand = "npm start"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10
+
+[healthcheck]
+path = "/api/health"
+timeout = 60
+interval = 30
+
+[[envs]]
+name = "NODE_ENV"
+value = "production"
