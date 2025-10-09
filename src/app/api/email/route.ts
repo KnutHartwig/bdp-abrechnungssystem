@@ -1,19 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { sendeAbrechnungAnLandeskasse } from '@/lib/email';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json(
-        { success: false, error: 'Nicht authentifiziert' },
-        { status: 401 }
-      );
-    }
-
     const body = await req.json();
     const { aktionId, pdfPath } = body;
 

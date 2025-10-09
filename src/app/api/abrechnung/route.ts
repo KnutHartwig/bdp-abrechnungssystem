@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { validateBetrag, validateKilometer, berechneFahrtkosten } from '@/lib/utils';
 import { Kategorie, Fahrzeugtyp } from '@prisma/client';
 
@@ -158,14 +156,9 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// PUT - Abrechnung aktualisieren (nur für Admins)
+// PUT - Abrechnung aktualisieren
 export async function PUT(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'Nicht authentifiziert' }, { status: 401 });
-    }
-
     const body = await req.json();
     const { id, status, ...updateData } = body;
 
@@ -194,14 +187,9 @@ export async function PUT(req: NextRequest) {
   }
 }
 
-// DELETE - Abrechnung löschen (nur für Admins)
+// DELETE - Abrechnung löschen
 export async function DELETE(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'LANDESKASSE') {
-      return NextResponse.json({ success: false, error: 'Keine Berechtigung' }, { status: 403 });
-    }
-
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
 

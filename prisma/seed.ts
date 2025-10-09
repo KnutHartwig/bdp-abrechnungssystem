@@ -1,5 +1,4 @@
 import { PrismaClient, Kategorie, Fahrzeugtyp, AktionStatus, AbrechnungStatus } from '@prisma/client';
-import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -9,31 +8,8 @@ async function main() {
   // Lösche existierende Daten
   await prisma.abrechnung.deleteMany();
   await prisma.aktion.deleteMany();
-  await prisma.user.deleteMany();
 
-  // 1. Admin-User erstellen
-  const hashedPassword = await bcrypt.hash('admin123', 10);
-  const adminUser = await prisma.user.create({
-    data: {
-      email: 'admin@bdp-bawue.de',
-      name: 'Admin BdP Landesverband Baden-Württemberg e.V.',
-      password: hashedPassword,
-      role: 'ADMIN',
-    },
-  });
-
-  const landeskasseUser = await prisma.user.create({
-    data: {
-      email: 'kasse@bdp-bawue.de',
-      name: 'Landeskasse',
-      password: hashedPassword,
-      role: 'LANDESKASSE',
-    },
-  });
-
-  console.log('✅ Admin-User erstellt');
-
-  // 2. Test-Aktionen erstellen
+  // Test-Aktionen erstellen
   const sommerlager2025 = await prisma.aktion.create({
     data: {
       titel: 'Sommerlager 2025',
@@ -273,18 +249,13 @@ async function main() {
   console.log('✅ Beispiel-Abrechnungen für alle Kategorien erstellt');
 
   // Zähle und zeige Ergebnisse
-  const userCount = await prisma.user.count();
   const aktionCount = await prisma.aktion.count();
   const abrechnungCount = await prisma.abrechnung.count();
 
   console.log('\n📊 Seed-Ergebnis:');
-  console.log(`   ${userCount} User`);
   console.log(`   ${aktionCount} Aktionen`);
   console.log(`   ${abrechnungCount} Abrechnungen`);
   console.log('\n🎉 Seed erfolgreich abgeschlossen!\n');
-  console.log('📝 Login-Daten:');
-  console.log('   Admin: admin@bdp-bawue.de / admin123');
-  console.log('   Kasse: kasse@bdp-bawue.de / admin123\n');
 }
 
 main()
